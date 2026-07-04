@@ -126,41 +126,6 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
   border-right: 3px solid var(--aqua); border-radius: 16px 16px 4px 16px;
   padding: 10px 15px; max-width: 82%; font-size: 15px; line-height: 1.55; white-space: pre-wrap; }
 
-/* ---- Empty-state welcome vignette (centered brand illustration) ---- */
-.nv-hero { display: flex; flex-direction: column; align-items: center; margin: 48px 0 4px; }
-.nv-hero-art { position: relative; width: 300px; height: 214px;
-  animation: nv-bob 6s ease-in-out infinite; }
-.nv-hero-art .halo { position: absolute; left: 50%; top: 48%; width: 238px; height: 238px;
-  transform: translate(-50%, -50%); border-radius: 50%;
-  background: radial-gradient(circle, rgba(92,204,204,.20) 0%, rgba(249,199,100,.12) 50%, rgba(248,249,245,0) 72%); }
-.nv-hero-art img { position: absolute; }
-.nv-hero-art .art-house { left: 50%; top: 50%; width: 120px; transform: translate(-50%, -50%);
-  filter: drop-shadow(0 8px 16px rgba(59,74,68,.12)); }
-.nv-hero-art .art-sun { top: 6px; right: 42px; width: 48px; transform: rotate(6deg); }
-.nv-hero-art .art-roots { left: 44px; bottom: 8px; width: 76px; transform: rotate(-8deg); opacity: .85; }
-.nv-hero-cap { color: var(--slate); font-size: 13.5px; font-weight: 600; margin-top: 8px; letter-spacing: .2px; }
-@keyframes nv-bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -6px; } }
-@media (prefers-reduced-motion: reduce) { .nv-hero-art { animation: none; } }
-@media (max-width: 640px) { .nv-hero { margin-top: 34px; } .nv-hero-art { transform: scale(.9); } }
-
-/* Alt B — minimal watermark (restrained / premium) */
-.nv-wm { display: flex; flex-direction: column; align-items: center; margin: 66px 0 4px; }
-.nv-wm img { width: 198px; opacity: .17; }
-.nv-wm .cap { color: var(--slate); font-size: 13px; font-weight: 600; margin-top: 18px; letter-spacing: .2px; }
-
-/* Alt C — playful ground-line scene */
-.nv-scene-wrap { display: flex; flex-direction: column; align-items: center; margin: 50px 0 6px; }
-.nv-scene { position: relative; display: flex; align-items: flex-end; justify-content: center;
-  gap: 6px; width: 336px; padding-bottom: 16px; }
-.nv-scene img { display: block; position: relative; z-index: 1; }
-.nv-scene .s-roots { width: 56px; opacity: .85; }
-.nv-scene .s-house { width: 102px; filter: drop-shadow(0 6px 12px rgba(59,74,68,.10)); }
-.nv-scene .s-sun { width: 50px; margin-bottom: 48px; }
-.nv-scene .s-blocks { width: 68px; opacity: .9; margin-bottom: 2px; }
-.nv-scene .ground { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
-  width: 330px; height: 0; border-top: 2px dashed rgba(92,204,204,.35); }
-.nv-scene-cap { color: var(--slate); font-size: 13.5px; font-weight: 600; margin-top: 10px; letter-spacing: .2px; }
-
 /* ---- Empty-state intro + suggestion chips ---- */
 .nv-intro { color: var(--slate); font-size: 15px; margin: 4px 0 14px; line-height: 1.6; }
 div[data-testid="stButton"] > button {
@@ -280,79 +245,6 @@ def render_empty_state():
     for i, q in enumerate(SUGGESTIONS):
         cols[i % 2].button(q, key=f"sug_{i}", use_container_width=True,
                            on_click=pick_suggestion, args=(q,))
-
-    # Welcome-screen brand art. Three treatments to compare via ?hero=a|b|c.
-    hero = str(st.query_params.get("hero", "a")).lower()
-    if hero == "b":
-        _hero_watermark()
-    elif hero == "c":
-        _hero_scene()
-    else:
-        _hero_vignette()
-
-
-def _hero_vignette():
-    """A — the house-and-child mark on a soft halo, with sun + roots."""
-    house = _data_uri(config.LOGO_PATH)
-    if not house:
-        return
-    sun = _data_uri(config.ASSETS_DIR / "decor-face.png")
-    roots = _data_uri(config.ASSETS_DIR / "decor-leaf.png")
-    st.markdown(
-        f"""
-        <div class="nv-hero" aria-hidden="true">
-          <div class="nv-hero-art">
-            <span class="halo"></span>
-            <img class="art-roots" src="{roots}" alt="">
-            <img class="art-house" src="{house}" alt="">
-            <img class="art-sun" src="{sun}" alt="">
-          </div>
-          <p class="nv-hero-cap">Nurturing roots, shaping the future.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def _hero_watermark():
-    """B — a single, very faint brand mark. Minimal and restrained."""
-    house = _data_uri(config.LOGO_PATH)
-    if not house:
-        return
-    st.markdown(
-        f"""
-        <div class="nv-wm" aria-hidden="true">
-          <img src="{house}" alt="">
-          <p class="cap">Nurturing roots, shaping the future.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def _hero_scene():
-    """C — motifs arranged on a ground line, like a little garden."""
-    house = _data_uri(config.LOGO_PATH)
-    if not house:
-        return
-    sun = _data_uri(config.ASSETS_DIR / "decor-face.png")
-    roots = _data_uri(config.ASSETS_DIR / "decor-leaf.png")
-    blocks = _data_uri(config.ASSETS_DIR / "decor-blocks.png")
-    st.markdown(
-        f"""
-        <div class="nv-scene-wrap" aria-hidden="true">
-          <div class="nv-scene">
-            <img class="s-roots" src="{roots}" alt="">
-            <img class="s-house" src="{house}" alt="">
-            <img class="s-sun" src="{sun}" alt="">
-            <img class="s-blocks" src="{blocks}" alt="">
-            <div class="ground"></div>
-          </div>
-          <p class="nv-scene-cap">Nurturing roots, shaping the future.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
 
 # ----------------------------------------------------------------------------- app
