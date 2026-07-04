@@ -126,17 +126,22 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
   border-right: 3px solid var(--aqua); border-radius: 16px 16px 4px 16px;
   padding: 10px 15px; max-width: 82%; font-size: 15px; line-height: 1.55; white-space: pre-wrap; }
 
-/* ---- Empty-state background decoration (brand motifs in the white space) ---- */
-.nv-decor { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-.nv-decor img { position: absolute; }
-.nv-decor .d1 { top: -46px; left: -54px; width: 210px; transform: rotate(-10deg); opacity: .55; }
-.nv-decor .d2 { top: 58px; right: -44px; width: 168px; transform: rotate(8deg); opacity: .5; }
-.nv-decor .d3 { bottom: 104px; left: -40px; width: 150px; transform: rotate(-6deg); opacity: .42; }
-.nv-decor .d4 { bottom: 46px; right: -44px; width: 188px; transform: rotate(6deg); opacity: .5; }
-/* Keep content above the decoration */
-[data-testid="stMainBlockContainer"] { position: relative; z-index: 1; }
-/* Hide on narrow screens so motifs never crowd the reading column */
-@media (max-width: 900px) { .nv-decor { display: none; } }
+/* ---- Empty-state welcome vignette (centered brand illustration) ---- */
+.nv-hero { display: flex; flex-direction: column; align-items: center; margin: 48px 0 4px; }
+.nv-hero-art { position: relative; width: 300px; height: 214px;
+  animation: nv-bob 6s ease-in-out infinite; }
+.nv-hero-art .halo { position: absolute; left: 50%; top: 48%; width: 238px; height: 238px;
+  transform: translate(-50%, -50%); border-radius: 50%;
+  background: radial-gradient(circle, rgba(92,204,204,.20) 0%, rgba(249,199,100,.12) 50%, rgba(248,249,245,0) 72%); }
+.nv-hero-art img { position: absolute; }
+.nv-hero-art .art-house { left: 50%; top: 50%; width: 120px; transform: translate(-50%, -50%);
+  filter: drop-shadow(0 8px 16px rgba(59,74,68,.12)); }
+.nv-hero-art .art-sun { top: 6px; right: 42px; width: 48px; transform: rotate(6deg); }
+.nv-hero-art .art-roots { left: 44px; bottom: 8px; width: 76px; transform: rotate(-8deg); opacity: .85; }
+.nv-hero-cap { color: var(--slate); font-size: 13.5px; font-weight: 600; margin-top: 8px; letter-spacing: .2px; }
+@keyframes nv-bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+@media (prefers-reduced-motion: reduce) { .nv-hero-art { animation: none; } }
+@media (max-width: 640px) { .nv-hero { margin-top: 34px; } .nv-hero-art { transform: scale(.9); } }
 
 /* ---- Empty-state intro + suggestion chips ---- */
 .nv-intro { color: var(--slate); font-size: 15px; margin: 4px 0 14px; line-height: 1.6; }
@@ -247,17 +252,6 @@ def pick_suggestion(question: str):
 
 
 def render_empty_state():
-    # Brand motifs scattered in the white space (edges/corners), behind content —
-    # shown only on the welcome screen, matching the brand's editorial style.
-    decor = "".join(
-        f'<img class="{cls}" src="{_data_uri(config.ASSETS_DIR / name)}" alt="">'
-        for cls, name in (("d1", "decor-leaf.png"), ("d2", "decor-face.png"),
-                          ("d3", "decor-blocks.png"), ("d4", "decor-house.png"))
-        if _data_uri(config.ASSETS_DIR / name)
-    )
-    if decor:
-        st.markdown(f'<div class="nv-decor" aria-hidden="true">{decor}</div>',
-                    unsafe_allow_html=True)
     st.markdown(
         f'<p class="nv-intro">Hi, I\'m <b>{config.MASCOT_NAME}</b> — your friendly '
         f'guide to {config.SCHOOL_NAME}. Ask me about our programmes, approach, '
@@ -268,6 +262,27 @@ def render_empty_state():
     for i, q in enumerate(SUGGESTIONS):
         cols[i % 2].button(q, key=f"sug_{i}", use_container_width=True,
                            on_click=pick_suggestion, args=(q,))
+
+    # A calm, centered brand vignette that fills the welcome-screen white space:
+    # the house-and-child mark on a soft halo, with the gold "sun" and teal roots.
+    house = _data_uri(config.LOGO_PATH)
+    if house:
+        sun = _data_uri(config.ASSETS_DIR / "decor-face.png")
+        roots = _data_uri(config.ASSETS_DIR / "decor-leaf.png")
+        st.markdown(
+            f"""
+            <div class="nv-hero" aria-hidden="true">
+              <div class="nv-hero-art">
+                <span class="halo"></span>
+                <img class="art-roots" src="{roots}" alt="">
+                <img class="art-house" src="{house}" alt="">
+                <img class="art-sun" src="{sun}" alt="">
+              </div>
+              <p class="nv-hero-cap">Nurturing roots, shaping the future.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 # ----------------------------------------------------------------------------- app
