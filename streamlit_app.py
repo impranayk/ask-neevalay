@@ -128,6 +128,8 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 
 /* ---- Empty-state intro + suggestion chips ---- */
 .nv-intro { color: var(--slate); font-size: 15px; margin: 4px 0 14px; line-height: 1.6; }
+.nv-follow-label { color: var(--slate); font-size: 11.5px; font-weight: 700; letter-spacing: .5px;
+  text-transform: uppercase; margin: 16px 0 6px; opacity: .8; }
 div[data-testid="stButton"] > button {
   border: 1.5px solid var(--border); background: #fff; color: var(--text);
   border-radius: 999px; padding: 9px 16px; font-size: 13.5px; font-weight: 600;
@@ -234,6 +236,16 @@ def pick_suggestion(question: str):
     st.session_state.pending = question
 
 
+def render_followups(items, midx):
+    """Related next-question chips shown under the latest answer."""
+    st.markdown('<p class="nv-follow-label">You might also ask</p>',
+                unsafe_allow_html=True)
+    cols = st.columns(2)
+    for i, q in enumerate(items):
+        cols[i % 2].button(q, key=f"fu_{midx}_{i}", use_container_width=True,
+                           on_click=pick_suggestion, args=(q,))
+
+
 def render_empty_state():
     st.markdown(
         f'<p class="nv-intro">Hi, I\'m <b>{config.MASCOT_NAME}</b> — your friendly '
@@ -291,6 +303,11 @@ def main():
             with st.chat_message("assistant", avatar=logo_image()):
                 st.markdown(msg["content"])
 
+    # Contextual follow-up chips under the most recent answer only.
+    msgs = st.session_state.messages
+    if msgs and msgs[-1]["role"] == "assistant" and msgs[-1].get("followups"):
+        render_followups(msgs[-1]["followups"], len(msgs) - 1)
+
     typed = st.chat_input(f"Ask {config.MASCOT_NAME} about Neevalay Tots…")
     prompt = typed or st.session_state.pop("pending", None)
     if not prompt:
@@ -321,7 +338,11 @@ def main():
             st.session_state.messages.pop()
             return
 
-    st.session_state.messages.append({"role": "assistant", "content": answer})
+    followups = llm.suggest_followups(prompt, answer)
+    st.session_state.messages.append(
+        {"role": "assistant", "content": answer, "followups": followups}
+    )
+    st.rerun()
 
 
 if __name__ == "__main__":

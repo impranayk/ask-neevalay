@@ -3,11 +3,15 @@
 The system prompt makes the assistant ("Neevu") warm, parent-friendly, strictly
 grounded in Neevalay's information, and safe for a preschool audience.
 """
+import re
 from typing import Iterator, List, Dict
 
 from groq import Groq
 
 from . import config
+
+# A small, fast model is plenty for generating short follow-up prompts.
+FOLLOWUP_MODEL = "llama-3.1-8b-instant"
 
 SYSTEM_PROMPT = (
     f"You are {config.MASCOT_NAME}, the warm and friendly AI guide for "
@@ -66,6 +70,41 @@ def build_messages(question: str, context: str, history: List[Dict]) -> List[Dic
 
     messages.append({"role": "user", "content": user_content})
     return messages
+
+
+def suggest_followups(question: str, answer: str) -> List[str]:
+    """Return up to 3 short, on-topic follow-up questions in the parent's voice."""
+    if not config.GROQ_API_KEY:
+        return []
+    system = (
+        "You suggest what a parent might naturally ask next while chatting with "
+        f"{config.SCHOOL_NAME}, a preschool. Given the parent's question and the "
+        "assistant's answer, propose 3 short follow-up questions the parent may "
+        "have next. Rules: write from the PARENT's point of view; max 8 words; "
+        "each ends with '?'; each must be answerable from the school's info "
+        "(programmes, ages, admissions, fees, timings, daycare, enrichment, "
+        "safety, approach, location); prefer moving toward booking a visit when "
+        "natural; do NOT repeat the question already asked. Return ONLY the three "
+        "questions, one per line, with no numbering or bullets."
+    )
+    user = f"Parent asked: {question}\n\nAssistant answered: {answer[:600]}"
+    try:
+        resp = _client().chat.completions.create(
+            model=FOLLOWUP_MODEL,
+            messages=[{"role": "system", "content": system},
+                      {"role": "user", "content": user}],
+            temperature=0.5,
+            max_tokens=90,
+        )
+        text = resp.choices[0].message.content or ""
+    except Exception:
+        return []
+    out = []
+    for line in text.splitlines():
+        q = re.sub(r'^[\s\-\*\d\.\)"]+', "", line).strip().strip('"').strip()
+        if q.endswith("?") and 6 <= len(q) <= 80 and q.lower() != question.lower():
+            out.append(q)
+    return out[:3]
 
 
 def stream_answer(question: str, context: str, history: List[Dict]) -> Iterator[str]:
