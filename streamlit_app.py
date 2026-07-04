@@ -57,7 +57,8 @@ st.set_page_config(
 st.markdown(
     """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700&display=swap');
+/* Official brand type: Nunito (headlines) + Nunito Sans (body) */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap');
 
 :root {
   --aqua: #5CCCCC; --aqua-dark: #3fb0b0; --aqua-soft: #EAF7F7;
@@ -84,12 +85,12 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 /* ---- Masthead ---- */
 .nv-masthead { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .nv-logo { height: clamp(42px, 11vw, 54px); width: auto; max-width: 100%; }
-.nv-title { font-family: 'Quicksand', sans-serif !important; color: var(--text);
-            font-size: clamp(24px, 6.5vw, 34px); font-weight: 700; letter-spacing: .2px;
+.nv-title { font-family: 'Nunito', sans-serif !important; color: var(--text);
+            font-size: clamp(24px, 6.5vw, 34px); font-weight: 800; letter-spacing: .2px;
             line-height: 1 !important; margin: 0 !important; }
 .nv-title .accent { color: var(--aqua); }
-.nv-eyebrow { font-family: 'Nunito Sans', sans-serif; color: var(--slate);
-              font-size: clamp(11px, 3vw, 12.5px); font-weight: 600; letter-spacing: .2px;
+.nv-eyebrow { font-family: 'Nunito', sans-serif; color: var(--slate);
+              font-size: clamp(11px, 3vw, 12.5px); font-weight: 700; letter-spacing: .3px;
               margin: 4px 0 0 !important; }
 .nv-rule { height: 3px; border: 0; border-radius: 3px; margin: 14px 0 12px;
            background: linear-gradient(90deg, var(--aqua) 0%, var(--gold) 100%); }
@@ -113,7 +114,7 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 [data-testid="stChatMessage"] a { color: var(--clay); text-decoration: none;
   border-bottom: 1px solid rgba(215,122,97,.4); }
 [data-testid="stChatMessage"] h1, [data-testid="stChatMessage"] h2, [data-testid="stChatMessage"] h3 {
-  font-family: 'Quicksand', sans-serif; color: var(--text); }
+  font-family: 'Nunito', sans-serif; font-weight: 800; color: var(--text); }
 /* Soft card around the assistant reply */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
   background: var(--card); border: 1px solid var(--border); border-radius: 16px;
@@ -192,7 +193,7 @@ def render_header():
             f"""
             <div class="nv-masthead">
               {brand}
-              <p class="nv-eyebrow">Parent Assistant · {config.BRAND_EYEBROW}</p>
+              <p class="nv-eyebrow">Parent Assistant · here to help you and your little one</p>
             </div>
             """,
             unsafe_allow_html=True,
