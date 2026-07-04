@@ -6,11 +6,24 @@ on a Soft Off-White base) with rounded, friendly Quicksand + Nunito Sans type.
 """
 import base64
 import html
+import re
 from functools import lru_cache
 
 import streamlit as st
 
 from chatbot import config, llm, rag
+
+# High-intent moments where a direct action panel (WhatsApp / call / enquiry) helps.
+_CONTACT_INTENT = re.compile(
+    r"\b(book|visit|tour|appointment|schedule|apply|admiss|enrol|enroll|register|"
+    r"registration|join|waitlist|seat|availab|fee|fees|cost|price|pricing|contact|"
+    r"call|whatsapp|phone|enquir|inquir|reach)\b",
+    re.I,
+)
+
+
+def _contact_intent(text: str) -> bool:
+    return bool(_CONTACT_INTENT.search(text or ""))
 
 
 # ----------------------------------------------------------------------------- assets
@@ -130,6 +143,11 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 .nv-intro { color: var(--slate); font-size: 15px; margin: 4px 0 14px; line-height: 1.6; }
 .nv-follow-label { color: var(--slate); font-size: 11.5px; font-weight: 700; letter-spacing: .5px;
   text-transform: uppercase; margin: 16px 0 6px; opacity: .8; }
+/* Contextual one-tap action panel under booking/contact answers */
+.nv-answer-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  background: var(--aqua-soft); border: 1px solid #cfeeee; border-radius: 14px;
+  padding: 12px 14px; margin: 14px 0 2px; }
+.nv-cta-lead { font-weight: 700; font-size: 13.5px; color: var(--text); margin-right: 2px; }
 div[data-testid="stButton"] > button {
   border: 1.5px solid var(--border); background: #fff; color: var(--text);
   border-radius: 999px; padding: 9px 16px; font-size: 13.5px; font-weight: 600;
@@ -246,6 +264,21 @@ def render_followups(items, midx):
                            on_click=pick_suggestion, args=(q,))
 
 
+def render_answer_cta():
+    """One-tap action panel shown under booking/contact-intent answers."""
+    st.markdown(
+        f"""
+        <div class="nv-answer-cta">
+          <span class="nv-cta-lead">Ready for the next step?</span>
+          <a class="nv-cta nv-cta-primary" href="{config.WHATSAPP_URL}" target="_blank">Book on WhatsApp</a>
+          <a class="nv-cta nv-cta-ghost" href="{config.CALL_URL}">Call us</a>
+          <a class="nv-cta nv-cta-ghost" href="{config.ENQUIRY_URL}" target="_blank">Enquiry form</a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_empty_state():
     st.markdown(
         f'<p class="nv-intro">Hi, I\'m <b>{config.MASCOT_NAME}</b> — your friendly '
@@ -303,10 +336,14 @@ def main():
             with st.chat_message("assistant", avatar=logo_image()):
                 st.markdown(msg["content"])
 
-    # Contextual follow-up chips under the most recent answer only.
+    # Under the most recent answer: a one-tap action panel (if intent) + chips.
     msgs = st.session_state.messages
-    if msgs and msgs[-1]["role"] == "assistant" and msgs[-1].get("followups"):
-        render_followups(msgs[-1]["followups"], len(msgs) - 1)
+    if msgs and msgs[-1]["role"] == "assistant":
+        last = msgs[-1]
+        if last.get("cta"):
+            render_answer_cta()
+        if last.get("followups"):
+            render_followups(last["followups"], len(msgs) - 1)
 
     typed = st.chat_input(f"Ask {config.MASCOT_NAME} about Neevalay Tots…")
     prompt = typed or st.session_state.pop("pending", None)
@@ -339,8 +376,9 @@ def main():
             return
 
     followups = llm.suggest_followups(prompt, answer)
+    cta = _contact_intent(f"{prompt} {answer}")
     st.session_state.messages.append(
-        {"role": "assistant", "content": answer, "followups": followups}
+        {"role": "assistant", "content": answer, "followups": followups, "cta": cta}
     )
     st.rerun()
 
