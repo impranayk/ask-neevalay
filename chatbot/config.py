@@ -59,7 +59,8 @@ PHONE = "+91 97117 52584"
 WHATSAPP_URL = "https://wa.me/919711752584"
 CALL_URL = "tel:+919711752584"
 EMAIL = "hello@neevalay.com"
-ENQUIRY_URL = "https://neevalay.com"   # point at the admissions/enquiry page when live
+CONTACT_URL = "https://neevalay.com/contact.html"            # general enquiry form
+ADMISSION_URL = "https://neevalay.com/admission-form.html"   # admissions application
 
 # --- Brand palette (from the school's designer) ---
 COLOR_AQUA = "#5CCCCC"    # Primary — Soft Aqua

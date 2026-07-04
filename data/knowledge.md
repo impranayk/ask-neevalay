@@ -64,7 +64,8 @@ We'd love to welcome your family to Neevalay Tots. The easiest way to begin is t
 book a visit or send us an enquiry — our team will walk you through our programmes,
 answer your questions, and guide you through the simple admission steps.
 - WhatsApp or call us to book a campus visit
-- Or share your details through our enquiry form and we'll reach out
+- Apply any time through our admission form: https://neevalay.com/admission-form.html
+- For general questions, use our contact form: https://neevalay.com/contact.html
 Seeing the environment and meeting our educators in person is the best way to know
 if Neevalay is right for your child.
 <!-- [TO CONFIRM] Admission steps, documents needed, intake months/waitlist, age cut-off dates. -->
@@ -102,6 +103,8 @@ directly so we can support them well.
 We're here to help and would love to hear from you:
 - WhatsApp / Phone: +91 97117 52584
 - Email: hello@neevalay.com
+- Contact form: https://neevalay.com/contact.html
+- Admission form: https://neevalay.com/admission-form.html
 - Website: https://neevalay.com
 - Hours: Monday to Saturday, 8:00 AM to 7:00 PM
 The quickest way to get answers or book a visit is to message us on WhatsApp.

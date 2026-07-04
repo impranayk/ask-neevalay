@@ -197,7 +197,7 @@ def render_contactbar():
         <div class="nv-contactbar">
           <a class="nv-cta nv-cta-primary" href="{config.WHATSAPP_URL}" target="_blank">Book a visit</a>
           <a class="nv-cta nv-cta-ghost" href="{config.CALL_URL}">Call us</a>
-          <a class="nv-cta-link" href="{config.WEBSITE_URL}" target="_blank">neevalay.com ↗</a>
+          <a class="nv-cta-link" href="{config.CONTACT_URL}" target="_blank">Contact us ↗</a>
         </div>
         """,
         unsafe_allow_html=True,
@@ -282,6 +282,7 @@ def render_answer_cta():
           <span class="nv-cta-lead">Ready for the next step?</span>
           <a class="nv-cta nv-cta-primary" href="{config.WHATSAPP_URL}" target="_blank">Book on WhatsApp</a>
           <a class="nv-cta nv-cta-ghost" href="{config.CALL_URL}">Call us</a>
+          <a class="nv-cta nv-cta-ghost" href="{config.ADMISSION_URL}" target="_blank">Admission form</a>
         </div>
         """,
         unsafe_allow_html=True,
