@@ -13,17 +13,27 @@ import streamlit as st
 
 from chatbot import config, llm, rag
 
-# High-intent moments where a direct action panel (WhatsApp / call / enquiry) helps.
-_CONTACT_INTENT = re.compile(
-    r"\b(book|visit|tour|appointment|schedule|apply|admiss|enrol|enroll|register|"
-    r"registration|join|waitlist|seat|availab|fee|fees|cost|price|pricing|contact|"
-    r"call|whatsapp|phone|enquir|inquir|reach)\b",
+# High-intent parent questions where a one-tap action panel helps. (No trailing
+# word-boundary so prefixes catch their variants: admiss→admissions, enrol→
+# enrolment, program→programme, timing→timings, hour→hours, etc.)
+_QUESTION_INTENT = re.compile(
+    r"\b(book|visit|tour|appointment|schedule|apply|admiss|enrol|regist|join|"
+    r"waitlist|seat|availab|fee|cost|price|pricing|contact|call|whatsapp|phone|"
+    r"enquir|inquir|reach|timing|hour|daycare|program|curriculum|enrichment|"
+    r"nursery|playgroup|kindergarten)",
+    re.I,
+)
+# The answer itself directing the parent to get in touch / book.
+_ANSWER_CONTACT = re.compile(
+    r"(whatsapp|contact us|call us|book a|booking|enquir|inquir|reach us|"
+    r"wa\.me|\+91|visit us)",
     re.I,
 )
 
 
-def _contact_intent(text: str) -> bool:
-    return bool(_CONTACT_INTENT.search(text or ""))
+def _wants_action(question: str, answer: str) -> bool:
+    return bool(_QUESTION_INTENT.search(question or "")
+                or _ANSWER_CONTACT.search(answer or ""))
 
 
 # ----------------------------------------------------------------------------- assets
@@ -272,7 +282,6 @@ def render_answer_cta():
           <span class="nv-cta-lead">Ready for the next step?</span>
           <a class="nv-cta nv-cta-primary" href="{config.WHATSAPP_URL}" target="_blank">Book on WhatsApp</a>
           <a class="nv-cta nv-cta-ghost" href="{config.CALL_URL}">Call us</a>
-          <a class="nv-cta nv-cta-ghost" href="{config.ENQUIRY_URL}" target="_blank">Enquiry form</a>
         </div>
         """,
         unsafe_allow_html=True,
@@ -376,7 +385,7 @@ def main():
             return
 
     followups = llm.suggest_followups(prompt, answer)
-    cta = _contact_intent(f"{prompt} {answer}")
+    cta = _wants_action(prompt, answer)
     st.session_state.messages.append(
         {"role": "assistant", "content": answer, "followups": followups, "cta": cta}
     )
