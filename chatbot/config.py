@@ -15,7 +15,8 @@ load_dotenv()
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT_DIR / "data"
 ASSETS_DIR = ROOT_DIR / "assets"
-LOGO_PATH = ASSETS_DIR / "logo.png"                # optional; falls back to the sprout mark
+LOGO_PATH = ASSETS_DIR / "logo.png"                # brand icon (avatar + tab icon)
+HEADER_LOGO_PATH = ASSETS_DIR / "logo_horizontal.png"   # full horizontal wordmark for the masthead
 EMBEDDINGS_PATH = DATA_DIR / "knowledge.npz"       # numpy vectors
 CHUNKS_PATH = DATA_DIR / "chunks.json"             # text + metadata
 

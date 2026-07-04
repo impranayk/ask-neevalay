@@ -12,17 +12,18 @@ import streamlit as st
 
 from chatbot import config, llm, rag
 
+
 # ----------------------------------------------------------------------------- assets
-SPROUT_SVG = (
-    "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg' "
-    "class='nv-mark' role='img' aria-label='Neevu sprout'>"
-    "<circle cx='32' cy='32' r='31' fill='#5CCCCC'/>"
-    "<circle cx='45' cy='20' r='5' fill='#F9C764'/>"
-    "<path d='M32 47 V31' stroke='#F8F9F5' stroke-width='3' stroke-linecap='round'/>"
-    "<path d='M32 34 C23 34 19 28 19 22 C28 22 32 28 32 34 Z' fill='#F8F9F5'/>"
-    "<path d='M32 31 C40 31 45 25 45 19 C36 19 32 25 32 31 Z' fill='#F8F9F5'/>"
-    "</svg>"
-)
+@lru_cache(maxsize=1)
+def _data_uri(path) -> str:
+    """Return a base64 data URI for a PNG asset, or '' if missing."""
+    try:
+        if path.exists():
+            b64 = base64.b64encode(path.read_bytes()).decode()
+            return f"data:image/png;base64,{b64}"
+    except Exception:
+        pass
+    return ""
 
 
 @lru_cache(maxsize=1)
@@ -81,10 +82,8 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 .block-container { max-width: 800px; padding-top: 1.5rem; padding-bottom: 6rem; }
 
 /* ---- Masthead ---- */
-.nv-masthead { display: flex; align-items: center; gap: 14px; }
-.nv-mark { width: 52px; height: 52px; flex-shrink: 0;
-           filter: drop-shadow(0 2px 5px rgba(92,204,204,.35)); }
-.nv-headtext { display: flex; flex-direction: column; min-width: 0; }
+.nv-masthead { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.nv-logo { height: clamp(42px, 11vw, 54px); width: auto; max-width: 100%; }
 .nv-title { font-family: 'Quicksand', sans-serif !important; color: var(--text);
             font-size: clamp(24px, 6.5vw, 34px); font-weight: 700; letter-spacing: .2px;
             line-height: 1 !important; margin: 0 !important; }
@@ -181,16 +180,19 @@ def render_header():
             st.button("↺  New chat", key="new_chat", on_click=clear_chat,
                       use_container_width=True)
         return
+    header_logo = _data_uri(config.HEADER_LOGO_PATH)
     left, right = st.columns([5, 1.4], vertical_alignment="center")
     with left:
+        if header_logo:
+            brand = (f'<img class="nv-logo" src="{header_logo}" '
+                     f'alt="{config.SCHOOL_NAME}">')
+        else:
+            brand = ('<h1 class="nv-title">Ask <span class="accent">Neevalay</span></h1>')
         st.markdown(
             f"""
             <div class="nv-masthead">
-              {SPROUT_SVG}
-              <div class="nv-headtext">
-                <h1 class="nv-title">Ask <span class="accent">Neevalay</span></h1>
-                <p class="nv-eyebrow">{config.SCHOOL_NAME} · {config.BRAND_EYEBROW}</p>
-              </div>
+              {brand}
+              <p class="nv-eyebrow">Parent Assistant · {config.BRAND_EYEBROW}</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -233,7 +235,7 @@ def pick_suggestion(question: str):
 
 def render_empty_state():
     st.markdown(
-        f'<p class="nv-intro">Hi, I\'m <b>{config.MASCOT_NAME}</b> 🌱 — your friendly '
+        f'<p class="nv-intro">Hi, I\'m <b>{config.MASCOT_NAME}</b> — your friendly '
         f'guide to {config.SCHOOL_NAME}. Ask me about our programmes, approach, '
         'admissions or daily care — or start with one of these:</p>',
         unsafe_allow_html=True,
