@@ -126,6 +126,16 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
   border-right: 3px solid var(--aqua); border-radius: 16px 16px 4px 16px;
   padding: 10px 15px; max-width: 82%; font-size: 15px; line-height: 1.55; white-space: pre-wrap; }
 
+/* ---- Empty-state brand stickers ---- */
+.nv-stickers { display: flex; gap: 12px; margin: 10px 0 12px; }
+.nv-sticker { width: 56px; height: 56px; filter: drop-shadow(0 3px 7px rgba(59,74,68,.13));
+  animation: nv-float 4s ease-in-out infinite; }
+.nv-sticker:nth-child(1) { transform: rotate(-7deg); animation-delay: 0s; }
+.nv-sticker:nth-child(2) { transform: rotate(4deg); animation-delay: .5s; }
+.nv-sticker:nth-child(3) { transform: rotate(-3deg); animation-delay: 1s; }
+@keyframes nv-float { 0%,100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+@media (prefers-reduced-motion: reduce) { .nv-sticker { animation: none; } }
+
 /* ---- Empty-state intro + suggestion chips ---- */
 .nv-intro { color: var(--slate); font-size: 15px; margin: 4px 0 14px; line-height: 1.6; }
 div[data-testid="stButton"] > button {
@@ -235,6 +245,14 @@ def pick_suggestion(question: str):
 
 
 def render_empty_state():
+    stickers = "".join(
+        f'<img class="nv-sticker" src="{_data_uri(config.ASSETS_DIR / name)}" alt="">'
+        for name in ("sticker-sun.png", "sticker-house.png", "sticker-smile.png")
+        if _data_uri(config.ASSETS_DIR / name)
+    )
+    if stickers:
+        st.markdown(f'<div class="nv-stickers">{stickers}</div>',
+                    unsafe_allow_html=True)
     st.markdown(
         f'<p class="nv-intro">Hi, I\'m <b>{config.MASCOT_NAME}</b> — your friendly '
         f'guide to {config.SCHOOL_NAME}. Ask me about our programmes, approach, '
