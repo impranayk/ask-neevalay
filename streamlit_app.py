@@ -126,15 +126,17 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
   border-right: 3px solid var(--aqua); border-radius: 16px 16px 4px 16px;
   padding: 10px 15px; max-width: 82%; font-size: 15px; line-height: 1.55; white-space: pre-wrap; }
 
-/* ---- Empty-state brand stickers ---- */
-.nv-stickers { display: flex; gap: 12px; margin: 10px 0 12px; }
-.nv-sticker { width: 56px; height: 56px; filter: drop-shadow(0 3px 7px rgba(59,74,68,.13));
-  animation: nv-float 4s ease-in-out infinite; }
-.nv-sticker:nth-child(1) { transform: rotate(-7deg); animation-delay: 0s; }
-.nv-sticker:nth-child(2) { transform: rotate(4deg); animation-delay: .5s; }
-.nv-sticker:nth-child(3) { transform: rotate(-3deg); animation-delay: 1s; }
-@keyframes nv-float { 0%,100% { translate: 0 0; } 50% { translate: 0 -5px; } }
-@media (prefers-reduced-motion: reduce) { .nv-sticker { animation: none; } }
+/* ---- Empty-state background decoration (brand motifs in the white space) ---- */
+.nv-decor { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.nv-decor img { position: absolute; }
+.nv-decor .d1 { top: -46px; left: -54px; width: 210px; transform: rotate(-10deg); opacity: .55; }
+.nv-decor .d2 { top: 58px; right: -44px; width: 168px; transform: rotate(8deg); opacity: .5; }
+.nv-decor .d3 { bottom: 104px; left: -40px; width: 150px; transform: rotate(-6deg); opacity: .42; }
+.nv-decor .d4 { bottom: 46px; right: -44px; width: 188px; transform: rotate(6deg); opacity: .5; }
+/* Keep content above the decoration */
+[data-testid="stMainBlockContainer"] { position: relative; z-index: 1; }
+/* Hide on narrow screens so motifs never crowd the reading column */
+@media (max-width: 900px) { .nv-decor { display: none; } }
 
 /* ---- Empty-state intro + suggestion chips ---- */
 .nv-intro { color: var(--slate); font-size: 15px; margin: 4px 0 14px; line-height: 1.6; }
@@ -245,13 +247,16 @@ def pick_suggestion(question: str):
 
 
 def render_empty_state():
-    stickers = "".join(
-        f'<img class="nv-sticker" src="{_data_uri(config.ASSETS_DIR / name)}" alt="">'
-        for name in ("sticker-sun.png", "sticker-house.png", "sticker-smile.png")
+    # Brand motifs scattered in the white space (edges/corners), behind content —
+    # shown only on the welcome screen, matching the brand's editorial style.
+    decor = "".join(
+        f'<img class="{cls}" src="{_data_uri(config.ASSETS_DIR / name)}" alt="">'
+        for cls, name in (("d1", "decor-leaf.png"), ("d2", "decor-face.png"),
+                          ("d3", "decor-blocks.png"), ("d4", "decor-house.png"))
         if _data_uri(config.ASSETS_DIR / name)
     )
-    if stickers:
-        st.markdown(f'<div class="nv-stickers">{stickers}</div>',
+    if decor:
+        st.markdown(f'<div class="nv-decor" aria-hidden="true">{decor}</div>',
                     unsafe_allow_html=True)
     st.markdown(
         f'<p class="nv-intro">Hi, I\'m <b>{config.MASCOT_NAME}</b> — your friendly '
