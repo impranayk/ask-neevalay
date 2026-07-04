@@ -1,0 +1,21 @@
+# Secrets
+.env
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# fastembed / model cache
+.cache/
+*.onnx
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Note: data/knowledge.npz + data/chunks.json ARE committed so the app runs
+# on Streamlit Cloud without a build step. Rebuild them with:
+#   python ingest/build_index.py

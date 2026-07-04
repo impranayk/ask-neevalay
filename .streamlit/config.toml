@@ -1,0 +1,12 @@
+[client]
+showErrorDetails = false
+toolbarMode = "minimal"
+
+# Brand palette from the Neevalay designer: soft off-white base, aqua primary.
+[theme]
+base = "light"
+primaryColor = "#5CCCCC"
+backgroundColor = "#F8F9F5"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#3B4A44"
+font = "sans serif"
