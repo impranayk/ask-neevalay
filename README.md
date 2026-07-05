@@ -19,26 +19,31 @@ over a curated knowledge base.
 ```
 Parent question
    ↓  embed (fastembed, on CPU)
-   ↓  cosine search over data/knowledge.npz   ← built from data/knowledge.md
-   ↓  grounded context + safety system prompt
-   ↓  Groq (Llama 3.3 70B)  →  warm, streamed answer
+   ↓  cosine search over data/knowledge.npz   ← crawled from neevalay.com
+   ↓  grounded context (with page URLs) + safety system prompt
+   ↓  Groq (Llama 3.3 70B)  →  warm, streamed answer + links to the source page
 ```
 
-- **Grounded & safe:** answers only from `data/knowledge.md`; no medical/emergency
-  advice; no storing a child's personal data; graceful hand-off to WhatsApp/phone.
-- **Lead capture:** a persistent **Book a visit / Call us** bar.
-- **On brand:** Soft Aqua / Warm Gold / Clay Terracotta on Off-White, Quicksand +
-  Nunito Sans, and the Neevu sprout mark.
+- **Grounded in your website:** `ingest/build_index.py` crawls every content page
+  on **neevalay.com**, strips nav/footer boilerplate, and embeds the real text. The
+  bot answers only from that content and links to the relevant page; for anything
+  the site doesn't cover it gracefully invites the parent to contact us.
+- **Safe:** no medical/emergency advice; no storing a child's personal data.
+- **Lead capture:** a persistent **Book a visit / Call us** bar, plus contextual
+  WhatsApp / Call / Admission-form buttons on high-intent answers.
+- **On brand:** Soft Aqua / Warm Gold / Clay Terracotta on Off-White, Nunito.
 
-## Editing what the bot knows
+## Keeping the bot's knowledge current
 
-1. Edit **`data/knowledge.md`** (plain markdown; `##` headings become topics).
-   Fill every `[TO CONFIRM]` note (fees, address, safety specifics, admissions).
-2. Rebuild the index:
-   ```bash
-   python ingest/build_index.py
-   ```
-3. Commit the updated `data/knowledge.npz` + `data/chunks.json`.
+The bot's knowledge **is** your website. To refresh it after you update the site:
+
+```bash
+python ingest/build_index.py     # re-crawls neevalay.com and rebuilds the index
+```
+
+Then commit the updated `data/knowledge.npz` + `data/chunks.json`. This also runs
+**automatically every night** via GitHub Actions (`.github/workflows/refresh-index.yml`),
+so site changes flow into the bot without any manual step.
 
 ## Run locally
 

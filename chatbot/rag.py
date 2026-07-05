@@ -70,7 +70,8 @@ def format_context(results: List[Dict]) -> str:
     blocks = []
     for r in results:
         blocks.append(
-            f"Topic: {r.get('title', 'Neevalay')}\n"
+            f"Title: {r.get('title', 'Neevalay')}\n"
+            f"URL: {r.get('url', '')}\n"
             f"{r.get('text', '')}"
         )
     return "\n\n".join(blocks)
