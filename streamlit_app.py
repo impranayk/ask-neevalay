@@ -31,9 +31,35 @@ _ANSWER_CONTACT = re.compile(
 )
 
 
+_ADMISSION_RE = re.compile(r"\b(apply|admiss|enrol|register|registration)", re.I)
+_FEES_RE = re.compile(r"\b(fee|cost|price|pricing|charge)", re.I)
+
+
 def _wants_action(question: str, answer: str) -> bool:
     return bool(_QUESTION_INTENT.search(question or "")
                 or _ANSWER_CONTACT.search(answer or ""))
+
+
+def _cta_spec(question: str, answer: str):
+    """Pick a context-appropriate action panel, or None if not warranted.
+
+    Buttons are (label, url, is_primary). Intent priority: admission > fees >
+    everyone else gets the book-a-visit nudge.
+    """
+    if not _wants_action(question, answer):
+        return None
+    text = f"{question} {answer}"
+    wa = ("WhatsApp us", config.WHATSAPP_URL, False)
+    call = ("Call us", config.CALL_URL, False)
+    if _ADMISSION_RE.search(text):
+        return {"lead": "Ready to apply?",
+                "buttons": [("Admission form", config.ADMISSION_URL, True), wa, call]}
+    if _FEES_RE.search(text):
+        return {"lead": "Want the details?",
+                "buttons": [("Ask on WhatsApp", config.WHATSAPP_URL, True),
+                            ("Contact us", config.CONTACT_URL, False), call]}
+    return {"lead": "Ready to visit us?",
+            "buttons": [("Book a visit", config.VISIT_URL, True), wa, call]}
 
 
 # ----------------------------------------------------------------------------- assets
@@ -274,17 +300,16 @@ def render_followups(items, midx):
                            on_click=pick_suggestion, args=(q,))
 
 
-def render_answer_cta():
-    """One-tap action panel shown under booking/contact-intent answers."""
+def render_answer_cta(spec):
+    """One-tap action panel, tailored to the question's intent."""
+    btns = ""
+    for label, url, primary in spec["buttons"]:
+        cls = "nv-cta-primary" if primary else "nv-cta-ghost"
+        target = ' target="_blank"' if url.startswith("http") else ""
+        btns += f'<a class="nv-cta {cls}" href="{url}"{target}>{label}</a>'
     st.markdown(
-        f"""
-        <div class="nv-answer-cta">
-          <span class="nv-cta-lead">Ready for the next step?</span>
-          <a class="nv-cta nv-cta-primary" href="{config.WHATSAPP_URL}" target="_blank">Book on WhatsApp</a>
-          <a class="nv-cta nv-cta-ghost" href="{config.CALL_URL}">Call us</a>
-          <a class="nv-cta nv-cta-ghost" href="{config.ADMISSION_URL}" target="_blank">Admission form</a>
-        </div>
-        """,
+        f'<div class="nv-answer-cta"><span class="nv-cta-lead">{spec["lead"]}</span>'
+        f'{btns}</div>',
         unsafe_allow_html=True,
     )
 
@@ -351,7 +376,7 @@ def main():
     if msgs and msgs[-1]["role"] == "assistant":
         last = msgs[-1]
         if last.get("cta"):
-            render_answer_cta()
+            render_answer_cta(last["cta"])
         if last.get("followups"):
             render_followups(last["followups"], len(msgs) - 1)
 
@@ -386,7 +411,7 @@ def main():
             return
 
     followups = llm.suggest_followups(prompt, answer)
-    cta = _wants_action(prompt, answer)
+    cta = _cta_spec(prompt, answer)
     st.session_state.messages.append(
         {"role": "assistant", "content": answer, "followups": followups, "cta": cta}
     )
