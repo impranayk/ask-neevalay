@@ -162,8 +162,9 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 /* ---- Chat messages (every stChatMessage is a Neevu reply) ---- */
 [data-testid="stChatMessage"] { background: transparent; padding: .35rem 0;
   gap: 10px; align-items: flex-start; }
-[data-testid="stChatMessage"] > img { width: 38px; height: 38px; border-radius: 11px;
-  border: 1.5px solid var(--border); background: #fff; padding: 3px; box-sizing: border-box; }
+[data-testid="stChatMessage"] > img { width: 40px; height: 40px; border-radius: 11px;
+  border: 1.5px solid var(--border); background: #fff; padding: 4px; box-sizing: border-box;
+  object-fit: contain; }
 /* the reply sits in a soft rounded card, its corner pointing at the avatar */
 [data-testid="stChatMessageContent"] { background: #fff; border: 1px solid var(--border);
   border-radius: 5px 16px 16px 16px; padding: 4px 18px 8px;
@@ -183,6 +184,14 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 [data-testid="stChatMessageContent"] li::before { content: ""; position: absolute; left: 2px;
   top: .62em; width: 9px; height: 9px; border-radius: 50%; background: var(--aqua); }
 [data-testid="stChatMessageContent"] li:nth-child(even)::before { background: var(--gold); }
+/* "Neevu is typing…" indicator */
+.nv-typing { display: inline-flex; align-items: center; gap: 6px; padding: 4px 2px; }
+.nv-typing span { width: 9px; height: 9px; border-radius: 50%; background: var(--aqua);
+  display: inline-block; animation: nv-blink 1.2s infinite ease-in-out both; }
+.nv-typing span:nth-child(2) { background: var(--gold); animation-delay: .18s; }
+.nv-typing span:nth-child(3) { background: var(--clay); animation-delay: .36s; }
+@keyframes nv-blink { 0%, 80%, 100% { transform: scale(.6); opacity: .35; }
+  40% { transform: scale(1); opacity: 1; } }
 
 /* ---- User question bubble (right, aqua tint) ---- */
 .nv-user-row { display: flex; justify-content: flex-end; margin: 14px 0 6px; }
@@ -409,9 +418,14 @@ def main():
             st.session_state.messages.pop()
             return
 
-        with st.spinner("Looking that up…"):
-            results = rag.retrieve(prompt)
-            context = rag.format_context(results)
+        typing = st.empty()
+        typing.markdown(
+            '<div class="nv-typing"><span></span><span></span><span></span></div>',
+            unsafe_allow_html=True,
+        )
+        results = rag.retrieve(prompt)
+        context = rag.format_context(results)
+        typing.empty()
 
         history = [
             {"role": m["role"], "content": m["content"]}
