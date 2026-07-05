@@ -48,7 +48,9 @@ def _cta_spec(question: str, answer: str):
     """
     if not _wants_action(question, answer):
         return None
-    text = f"{question} {answer}"
+    # Classify by the PARENT'S QUESTION, not the answer — answers often contain
+    # page/link titles like "Admission Form" that would skew the intent.
+    text = question or ""
     wa = ("WhatsApp us", config.WHATSAPP_URL, False)
     call = ("Call us", config.CALL_URL, False)
     if _ADMISSION_RE.search(text):
@@ -157,17 +159,30 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 .nv-cta-link { color: var(--aqua-dark) !important; font-weight: 700; font-size: 13px;
                text-decoration: none !important; padding: 8px 6px; }
 
-/* ---- Chat messages ---- */
-[data-testid="stChatMessage"] { background: transparent; padding: .3rem 0; }
-[data-testid="stChatMessage"] p, [data-testid="stChatMessage"] li { font-size: 15.5px; line-height: 1.7; }
-[data-testid="stChatMessage"] a { color: var(--clay); text-decoration: none;
-  border-bottom: 1px solid rgba(215,122,97,.4); }
-[data-testid="stChatMessage"] h1, [data-testid="stChatMessage"] h2, [data-testid="stChatMessage"] h3 {
-  font-family: 'Nunito', sans-serif; font-weight: 800; color: var(--text); }
-/* Soft card around the assistant reply */
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
-  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-  padding: 6px 18px; box-shadow: 0 2px 12px rgba(59,74,68,.05); }
+/* ---- Chat messages (every stChatMessage is a Neevu reply) ---- */
+[data-testid="stChatMessage"] { background: transparent; padding: .35rem 0;
+  gap: 10px; align-items: flex-start; }
+[data-testid="stChatMessage"] > img { width: 38px; height: 38px; border-radius: 11px;
+  border: 1.5px solid var(--border); background: #fff; padding: 3px; box-sizing: border-box; }
+/* the reply sits in a soft rounded card, its corner pointing at the avatar */
+[data-testid="stChatMessageContent"] { background: #fff; border: 1px solid var(--border);
+  border-radius: 5px 16px 16px 16px; padding: 4px 18px 8px;
+  box-shadow: 0 2px 14px rgba(59,74,68,.05); }
+[data-testid="stChatMessageContent"] p,
+[data-testid="stChatMessageContent"] li { font-size: 15.5px; line-height: 1.75; }
+[data-testid="stChatMessageContent"] strong { color: #2f3b36; font-weight: 700; }
+[data-testid="stChatMessageContent"] a { color: var(--clay); text-decoration: none;
+  border-bottom: 1px solid rgba(215,122,97,.45); font-weight: 600; }
+[data-testid="stChatMessageContent"] a:hover { border-bottom-color: var(--clay); }
+[data-testid="stChatMessageContent"] h1, [data-testid="stChatMessageContent"] h2,
+[data-testid="stChatMessageContent"] h3 { font-family: 'Nunito', sans-serif; font-weight: 800;
+  color: var(--text); margin: .5rem 0 .3rem; }
+/* friendly rounded list markers, alternating aqua / gold */
+[data-testid="stChatMessageContent"] ul { list-style: none; padding-left: 2px; margin: .45rem 0; }
+[data-testid="stChatMessageContent"] li { position: relative; padding-left: 22px; margin: 7px 0; }
+[data-testid="stChatMessageContent"] li::before { content: ""; position: absolute; left: 2px;
+  top: .62em; width: 9px; height: 9px; border-radius: 50%; background: var(--aqua); }
+[data-testid="stChatMessageContent"] li:nth-child(even)::before { background: var(--gold); }
 
 /* ---- User question bubble (right, aqua tint) ---- */
 .nv-user-row { display: flex; justify-content: flex-end; margin: 14px 0 6px; }
