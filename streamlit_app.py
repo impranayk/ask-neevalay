@@ -434,8 +434,12 @@ def main():
 
         try:
             answer = st.write_stream(llm.stream_answer(prompt, context, history))
-        except Exception as exc:
-            st.error(f"Sorry — something went wrong: {exc}")
+        except Exception:
+            st.warning(
+                "I'm having a little trouble answering right now — sorry! Please try "
+                f"again in a moment, or reach our team on WhatsApp at {config.PHONE} "
+                "and we'll be happy to help."
+            )
             st.session_state.messages.pop()
             return
 
