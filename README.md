@@ -64,6 +64,18 @@ Get a free Groq key at <https://console.groq.com/keys>.
 3. In **Settings → Secrets**, add `GROQ_API_KEY = "…"`.
 4. Embed on neevalay.com as a floating widget or a masked full-screen page.
 
+Live: <https://ask-neevalay.streamlit.app>
+
+## Keeping it awake
+
+Streamlit's free tier sleeps an app after inactivity, so two lightweight pingers
+keep it warm (no cold "wake-up" for parents):
+
+- **GitHub Action** — `.github/workflows/keep-awake.yml` loads the app ~every
+  10 minutes (a cookie-jar `curl` so Streamlit's redirect handshake returns `200`).
+- **[cron-job.org](https://cron-job.org)** — an external monitor pings it every
+  5 minutes (more reliable than GitHub's scheduled runs, which can be delayed).
+
 ---
 
 _Ask Neevalay is the public assistant. A separate, authenticated **Neevalay
