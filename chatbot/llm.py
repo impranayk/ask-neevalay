@@ -45,13 +45,43 @@ SYSTEM_PROMPT = (
 )
 
 
-def _client() -> Groq:
-    if not config.GROQ_API_KEY:
+def _groq_keys():
+    keys = []
+    for v in (config.GROQ_API_KEY, config.GROQ_API_KEY2):
+        keys += [k.strip() for k in (v or "").split(",") if k.strip()]
+    seen, out = set(), []
+    for k in keys:
+        if k not in seen:
+            seen.add(k)
+            out.append(k)
+    return out
+
+
+def _is_rate_limit(exc) -> bool:
+    s = str(exc).lower()
+    return ("rate_limit" in s or "429" in s or "tokens per day" in s
+            or getattr(exc, "status_code", None) == 429)
+
+
+def _complete(**kw):
+    """One completion (streaming or not) with automatic key failover on a
+    daily-limit / rate-limit error. Returns the SDK response object."""
+    keys = _groq_keys()
+    if not keys:
         raise RuntimeError(
             "GROQ_API_KEY is not set. Copy .env.example to .env and add your "
             "free key from https://console.groq.com/keys"
         )
-    return Groq(api_key=config.GROQ_API_KEY)
+    last = None
+    for i, key in enumerate(keys):
+        try:
+            return Groq(api_key=key).chat.completions.create(**kw)
+        except Exception as exc:
+            last = exc
+            if _is_rate_limit(exc) and i < len(keys) - 1:
+                continue
+            raise
+    raise last
 
 
 def build_messages(question: str, context: str, history: List[Dict]) -> List[Dict]:
@@ -78,7 +108,7 @@ def build_messages(question: str, context: str, history: List[Dict]) -> List[Dic
 
 def suggest_followups(question: str, answer: str) -> List[str]:
     """Return up to 3 short, on-topic follow-up questions in the parent's voice."""
-    if not config.GROQ_API_KEY:
+    if not _groq_keys():
         return []
     system = (
         "You suggest what a parent might naturally ask next while chatting with "
@@ -93,7 +123,7 @@ def suggest_followups(question: str, answer: str) -> List[str]:
     )
     user = f"Parent asked: {question}\n\nAssistant answered: {answer[:600]}"
     try:
-        resp = _client().chat.completions.create(
+        resp = _complete(
             model=FOLLOWUP_MODEL,
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": user}],
@@ -114,12 +144,9 @@ def suggest_followups(question: str, answer: str) -> List[str]:
 def stream_answer(question: str, context: str, history: List[Dict]) -> Iterator[str]:
     """Yield the answer token-by-token for a live typing effect."""
     messages = build_messages(question, context, history)
-    completion = _client().chat.completions.create(
-        model=config.GROQ_MODEL,
-        messages=messages,
-        temperature=0.35,
-        max_tokens=800,
-        stream=True,
+    completion = _complete(
+        model=config.GROQ_MODEL, messages=messages,
+        temperature=0.35, max_tokens=800, stream=True,
     )
     for chunk in completion:
         delta = chunk.choices[0].delta.content
