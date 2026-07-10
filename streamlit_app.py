@@ -247,7 +247,7 @@ def render_contactbar():
         <div class="nv-contactbar">
           <a class="nv-cta nv-cta-primary" href="{config.WHATSAPP_URL}" target="_blank">Book a visit</a>
           <a class="nv-cta nv-cta-ghost" href="{config.CALL_URL}">Call us</a>
-          <a class="nv-cta-link" href="{config.CONTACT_URL}" target="_blank">Contact us ↗</a>
+          <a class="nv-cta-link" href="{config.CONTACT_URL}" target="_blank">Contact us <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M8 16 16 8"/><path d="M9 8h7v7"/></svg></a>
         </div>
         """,
         unsafe_allow_html=True,
