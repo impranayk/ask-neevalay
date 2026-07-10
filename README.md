@@ -68,13 +68,12 @@ Live: <https://ask-neevalay.streamlit.app>
 
 ## Keeping it awake
 
-Streamlit's free tier sleeps an app after inactivity, so two lightweight pingers
-keep it warm (no cold "wake-up" for parents):
+Streamlit's free tier sleeps an app after inactivity, so an external uptime
+monitor keeps it warm (no cold "wake-up" for parents):
 
-- **GitHub Action** — `.github/workflows/keep-awake.yml` loads the app ~every
-  10 minutes (a cookie-jar `curl` so Streamlit's redirect handshake returns `200`).
-- **[cron-job.org](https://cron-job.org)** — an external monitor pings it every
-  5 minutes (more reliable than GitHub's scheduled runs, which can be delayed).
+- **[cron-job.org](https://cron-job.org)** pings the app URL every 5 minutes.
+  (Enable "follow redirects / treat redirects as success" so Streamlit's `303`
+  session handshake counts as a success.)
 
 ---
 
