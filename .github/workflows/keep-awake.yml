@@ -17,9 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping the app
-        # >>> CONFIRM this is your live app URL; edit if you used a custom name.
         env:
-          APP_URL: "https://ask-neevalay-4py5wmqmo2telesqbcky3z.streamlit.app"
+          APP_URL: "https://ask-neevalay.streamlit.app"
         run: |
           CJ=$(mktemp)   # cookie jar so Streamlit's redirect handshake resolves
           code=$(curl -sS -o /dev/null -w "%{http_code}" -L --max-redirs 10 \
