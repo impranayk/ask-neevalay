@@ -95,7 +95,18 @@ def _complete(*, models=None, **kw):
     raise last                        # every model+key was rate-limited
 
 
-def build_messages(question: str, context: str, history: List[Dict]) -> List[Dict]:
+def _lang_directive(reply_lang: str) -> str:
+    """A final, authoritative instruction fixing the reply language (from the
+    English/हिंदी toggle). Overrides the 'match the parent' default."""
+    if reply_lang and ("हिंदी" in reply_lang or reply_lang.lower() in ("hi", "hindi")):
+        return ("\n\nIMPORTANT: Write your ENTIRE reply in Hindi (हिंदी), in "
+                "Devanagari script — warm and simple, whatever language the "
+                "question used.")
+    return "\n\nIMPORTANT: Write your ENTIRE reply in English."
+
+
+def build_messages(question: str, context: str, history: List[Dict],
+                   reply_lang: str = "English") -> List[Dict]:
     """Assemble the chat payload: system + prior turns + grounded user turn."""
     messages: List[Dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages.extend(history)
@@ -113,21 +124,25 @@ def build_messages(question: str, context: str, history: List[Dict]) -> List[Dic
             "invite them to contact our team or book a visit.)"
         )
 
-    messages.append({"role": "user", "content": user_content})
+    messages.append({"role": "user", "content": user_content + _lang_directive(reply_lang)})
     return messages
 
 
-def suggest_followups(question: str, answer: str) -> List[str]:
+def suggest_followups(question: str, answer: str,
+                      reply_lang: str = "English") -> List[str]:
     """Return up to 3 short, on-topic follow-up questions in the parent's voice."""
     if not _groq_keys():
         return []
+    hindi = reply_lang and ("हिंदी" in reply_lang or reply_lang.lower() in ("hi", "hindi"))
+    lang_rule = ("Write the questions in Hindi (हिंदी, Devanagari script)."
+                 if hindi else "Write the questions in English.")
     system = (
         "You suggest what a parent might naturally ask next while chatting with "
         f"{config.SCHOOL_NAME}, a preschool. Given the parent's question and the "
         "assistant's answer, propose 3 short follow-up questions the parent may "
         "have next. Rules: write from the PARENT's point of view; max 8 words; "
-        "each ends with '?'; each must be answerable from the school's info "
-        "(programmes, ages, admissions, fees, timings, daycare, enrichment, "
+        f"each ends with '?'; {lang_rule} each must be answerable from the school's "
+        "info (programmes, ages, admissions, fees, timings, daycare, enrichment, "
         "safety, approach, location); prefer moving toward booking a visit when "
         "natural; do NOT repeat the question already asked. Return ONLY the three "
         "questions, one per line, with no numbering or bullets."
@@ -152,9 +167,10 @@ def suggest_followups(question: str, answer: str) -> List[str]:
     return out[:3]
 
 
-def stream_answer(question: str, context: str, history: List[Dict]) -> Iterator[str]:
+def stream_answer(question: str, context: str, history: List[Dict],
+                  reply_lang: str = "English") -> Iterator[str]:
     """Yield the answer token-by-token for a live typing effect."""
-    messages = build_messages(question, context, history)
+    messages = build_messages(question, context, history, reply_lang)
     completion = _complete(
         models=config.GROQ_MODELS, messages=messages,
         temperature=0.35, max_tokens=800, stream=True,

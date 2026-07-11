@@ -95,12 +95,24 @@ def logo_image():
     return "🌱"
 
 
-SUGGESTIONS = [
-    "Which programmes do you offer, and for what ages?",
-    "What is your teaching approach?",
-    "How do I book a visit or apply?",
-    "What are your timings and daycare options?",
-]
+SUGGESTIONS = {
+    "English": [
+        "Which programmes do you offer, and for what ages?",
+        "What is your teaching approach?",
+        "How do I book a visit or apply?",
+        "What are your timings and daycare options?",
+    ],
+    "हिंदी": [
+        "आप कौन-से कार्यक्रम देते हैं, और किस उम्र के लिए?",
+        "आपका शिक्षण तरीका क्या है?",
+        "मैं विज़िट कैसे बुक करूँ या दाखिला कैसे लूँ?",
+        "आपका समय और डेकेयर विकल्प क्या हैं?",
+    ],
+}
+
+
+def _reply_lang():
+    return st.session_state.get("reply_lang", "English")
 
 st.set_page_config(
     page_title=config.BRAND_NAME,
@@ -220,6 +232,17 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
   padding: 13px 16px; margin: 6px 0; }
 .nv-error-text { color: var(--text); font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
 .nv-error-cta { display: flex; flex-wrap: wrap; gap: 8px; }
+/* ---- Language toggle (English / हिंदी) — compact right-aligned pill ---- */
+.st-key-langtoggle { display: flex; justify-content: flex-end; margin: -4px 0 10px; }
+.st-key-langtoggle [role="radiogroup"] { gap: 0 !important; background: #fff;
+  border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
+.st-key-langtoggle [role="radiogroup"] > label { margin: 0 !important; padding: 3px 15px !important;
+  border-radius: 999px !important; cursor: pointer; transition: background .12s; }
+.st-key-langtoggle [role="radiogroup"] > label > div:first-child { display: none !important; }
+.st-key-langtoggle [role="radiogroup"] > label:has(input:checked) { background: var(--aqua-soft) !important; }
+.st-key-langtoggle [role="radiogroup"] > label:has(input:checked) p { color: var(--aqua-dark) !important;
+  font-weight: 800 !important; }
+.st-key-langtoggle [role="radiogroup"] p { font-size: 13px !important; margin: 0 !important; }
 /* ---- Lead-capture card ("Prefer we call you?") — warm, on-brand ---- */
 [class*="st-key-nvlead_"] details { border: 1.5px solid #cfeeee !important; border-radius: 14px !important;
   background: var(--aqua-soft) !important; box-shadow: 0 2px 10px rgba(59,74,68,.05) !important; }
@@ -344,10 +367,17 @@ def pick_suggestion(question: str):
     st.session_state.pending = question
 
 
+def render_lang_toggle():
+    """A compact English / हिंदी pill so parents pick the reply language."""
+    with st.container(key="langtoggle"):
+        st.radio("Language", ["English", "हिंदी"], horizontal=True,
+                 key="reply_lang", label_visibility="collapsed")
+
+
 def render_followups(items, midx):
     """Related next-question chips shown under the latest answer."""
-    st.markdown('<p class="nv-follow-label">You might also ask</p>',
-                unsafe_allow_html=True)
+    label = "आप यह भी पूछ सकते हैं" if _reply_lang() == "हिंदी" else "You might also ask"
+    st.markdown(f'<p class="nv-follow-label">{label}</p>', unsafe_allow_html=True)
     cols = st.columns(2)
     for i, q in enumerate(items):
         cols[i % 2].button(q, key=f"fu_{midx}_{i}", use_container_width=True,
@@ -425,14 +455,16 @@ def render_lead_form(key: str, *, compact: bool = False):
 
 
 def render_empty_state():
-    st.markdown(
-        f'<p class="nv-intro">Hi, I\'m <b>{config.MASCOT_NAME}</b> — your friendly '
-        f'guide to {config.SCHOOL_NAME}. Ask me about our programmes, approach, '
-        'admissions or daily care — or start with one of these:</p>',
-        unsafe_allow_html=True,
-    )
+    if _reply_lang() == "हिंदी":
+        intro = ('नमस्ते! मैं <b>नीवू</b> हूँ — नीवालय टॉट्स के लिए आपकी मददगार गाइड। '
+                 'हमारे कार्यक्रमों, तरीके, दाखिले या देखभाल के बारे में पूछें — या इनमें से चुनें:')
+    else:
+        intro = (f'Hi, I\'m <b>{config.MASCOT_NAME}</b> — your friendly guide to '
+                 f'{config.SCHOOL_NAME}. Ask me about our programmes, approach, '
+                 'admissions or daily care — or start with one of these:')
+    st.markdown(f'<p class="nv-intro">{intro}</p>', unsafe_allow_html=True)
     cols = st.columns(2)
-    for i, q in enumerate(SUGGESTIONS):
+    for i, q in enumerate(SUGGESTIONS.get(_reply_lang(), SUGGESTIONS["English"])):
         cols[i % 2].button(q, key=f"sug_{i}", use_container_width=True,
                            on_click=pick_suggestion, args=(q,))
 
@@ -443,6 +475,7 @@ def main():
     # above (a[href*="streamlit.io/.app"], viewerBadge, etc.) — no JS needed.
     render_sidebar()
     render_header()
+    render_lang_toggle()
 
     if not config.GROQ_API_KEY:
         st.warning(
@@ -476,7 +509,9 @@ def main():
         if last.get("followups"):
             render_followups(last["followups"], len(msgs) - 1)
 
-    typed = st.chat_input(f"Ask {config.MASCOT_NAME} about Neevalay Tots…")
+    placeholder = ("नीवू से नीवालय टॉट्स के बारे में पूछें…" if _reply_lang() == "हिंदी"
+                   else f"Ask {config.MASCOT_NAME} about Neevalay Tots…")
+    typed = st.chat_input(placeholder)
     prompt = typed or st.session_state.pop("pending", None)
     if not prompt:
         return
@@ -520,14 +555,15 @@ def main():
         ][-6:]
 
         try:
-            answer = st.write_stream(llm.stream_answer(prompt, context, history))
+            answer = st.write_stream(
+                llm.stream_answer(prompt, context, history, reply_lang=_reply_lang()))
         except Exception as exc:
             print(f"[llm] answer failed: {type(exc).__name__}: {exc}")  # → app logs
             render_error_card(rate_limited=llm._is_rate_limit(exc))
             st.session_state.messages.pop()
             return
 
-    followups = llm.suggest_followups(prompt, answer)
+    followups = llm.suggest_followups(prompt, answer, reply_lang=_reply_lang())
     cta = _cta_spec(prompt, answer)
     # Analytics: what parents ask + whether we had grounded info for it (best-effort).
     store.log_question(prompt, answered=bool(results),
