@@ -24,13 +24,20 @@ Parent question
    ↓  Groq (Llama 3.3 70B)  →  warm, streamed answer + links to the source page
 ```
 
-- **Grounded in your website:** `ingest/build_index.py` crawls every content page
-  on **neevalay.com**, strips nav/footer boilerplate, and embeds the real text. The
-  bot answers only from that content and links to the relevant page; for anything
-  the site doesn't cover it gracefully invites the parent to contact us.
-- **Safe:** no medical/emergency advice; no storing a child's personal data.
-- **Lead capture:** a persistent **Book a visit / Call us** bar, plus contextual
-  WhatsApp / Call / Admission-form buttons on high-intent answers.
+- **Grounded in your website + a curated supplement:** `ingest/build_index.py`
+  crawls every content page on **neevalay.com**, strips nav/footer boilerplate, and
+  embeds the real text — **plus** the curated answers in
+  [`data/knowledge.md`](data/knowledge.md) (timings, fee policy, safety, admission
+  steps the site may not spell out). The bot answers only from that content and
+  links to the relevant page; for anything it doesn't cover it invites contact.
+- **Lead capture:** contextual **Book a visit / WhatsApp / Call / Admission-form**
+  buttons on high-intent answers, plus an in-chat **"Request a callback"** form
+  (name + phone + programme) that stores the enquiry — see
+  [EMBED_AND_DB.md](EMBED_AND_DB.md).
+- **Analytics:** every question is logged (anonymised) so you can see the top
+  questions and what's going unanswered, and fill those gaps.
+- **Safe & fair:** no medical/emergency advice; no storing a child's personal
+  data; a per-session message cap protects the shared Groq quota on the public URL.
 - **On brand:** Soft Aqua / Warm Gold / Clay Terracotta on Off-White, Nunito.
 
 ## Keeping the bot's knowledge current
@@ -61,8 +68,11 @@ Get a free Groq key at <https://console.groq.com/keys>.
 
 1. Push this repo to GitHub.
 2. On <https://share.streamlit.io>, point at `streamlit_app.py`.
-3. In **Settings → Secrets**, add `GROQ_API_KEY = "…"`.
-4. Embed on neevalay.com as a floating widget or a masked full-screen page.
+3. In **Settings → Secrets**, add `GROQ_API_KEY = "…"`. *(Optional)* add the
+   Supabase secrets to turn on **leads + analytics** — see [EMBED_AND_DB.md](EMBED_AND_DB.md).
+4. **Embed on neevalay.com** — paste [`embed/floating-widget.html`](embed/floating-widget.html)
+   before `</body>` for a floating bubble, or host [`embed/fullscreen.html`](embed/fullscreen.html)
+   as a dedicated page. Full guide in [EMBED_AND_DB.md](EMBED_AND_DB.md).
 
 Live: <https://ask-neevalay.streamlit.app>
 

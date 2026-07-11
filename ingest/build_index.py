@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from chatbot import config  # noqa: E402
 
 SITE = config.WEBSITE_URL.rstrip("/")
+SUPPLEMENT = config.DATA_DIR / "knowledge.md"      # curated answers the site lacks
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; NeevalayBot/1.0; +https://neevalay.com)"}
 # Pages with no useful answer content for parents.
 DENY = {"privacy-policy.html", "terms-of-use.html", "cookie-policy.html"}
@@ -143,6 +144,32 @@ def chunk_text(text: str):
     return chunks
 
 
+def load_supplement():
+    """Merge curated Q&A from data/knowledge.md — answers the website doesn't
+    spell out (timings, fee policy, safety, admission steps). Each '## ' section
+    becomes one chunk, tagged with the site URL so page links still work."""
+    if not SUPPLEMENT.exists():
+        return []
+    text = SUPPLEMENT.read_text(encoding="utf-8")
+    records = []
+    for section in re.split(r"(?m)^##\s+", text):
+        section = section.strip()
+        if not section or section.startswith("#"):   # skip the H1 preamble
+            continue
+        lines = section.splitlines()
+        title = lines[0].strip()
+        # Drop reviewer HTML comments, keep the answer text.
+        body = re.sub(r"<!--.*?-->", " ", " ".join(l.strip() for l in lines[1:]),
+                      flags=re.S)
+        body = re.sub(r"\s+", " ", body).strip()
+        if len(body) >= MIN_CHUNK:
+            records.append({"title": f"{title} · Neevalay Tots",
+                            "url": config.WEBSITE_URL, "text": body})
+    if records:
+        print(f"  + {len(records)} curated section(s) from knowledge.md")
+    return records
+
+
 def build():
     print(f"Crawling {SITE} …")
     pages = crawl()
@@ -155,6 +182,7 @@ def build():
     for url, (title, body) in pages.items():
         for piece in chunk_text(body):
             records.append({"title": title, "url": url, "text": piece})
+    records += load_supplement()
 
     print(f"\nPages: {len(pages)} | chunks: {len(records)}")
     print(f"Embedding with {config.EMBED_MODEL} (first run downloads the model) …")

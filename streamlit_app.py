@@ -7,11 +7,13 @@ on a Soft Off-White base) with rounded, friendly Quicksand + Nunito Sans type.
 import base64
 import html
 import re
+import uuid
 from functools import lru_cache
 
 import streamlit as st
+import streamlit.components.v1 as components
 
-from chatbot import config, llm, rag
+from chatbot import config, llm, rag, store
 
 # High-intent parent questions where a one-tap action panel helps. (No trailing
 # word-boundary so prefixes catch their variants: admiss→admissions, enrol→
@@ -208,6 +210,8 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
   background: var(--aqua-soft); border: 1px solid #cfeeee; border-radius: 14px;
   padding: 12px 14px; margin: 14px 0 2px; }
 .nv-cta-lead { font-weight: 700; font-size: 13.5px; color: var(--text); margin-right: 2px; }
+.nv-lead-done { background: var(--aqua-soft); border: 1px solid #cfeeee; border-radius: 12px;
+  padding: 10px 14px; margin: 8px 0; color: var(--aqua-dark); font-weight: 700; font-size: 14px; }
 div[data-testid="stButton"] > button {
   border: 1.5px solid var(--border); background: #fff; color: var(--text);
   border-radius: 999px; padding: 9px 16px; font-size: 13.5px; font-weight: 600;
@@ -295,6 +299,9 @@ def render_sidebar():
         st.caption(f"WhatsApp / Call: {config.PHONE}")
         st.caption(f"Email: {config.EMAIL}")
         st.caption("Open Mon–Sat, 8:00 AM – 7:00 PM")
+        if store.enabled():
+            st.divider()
+            render_lead_form("sidebar")
         st.divider()
         st.caption("Knowledge base: " + ("ready" if rag.has_knowledge() else "not built yet"))
         if st.button("Clear conversation", use_container_width=True):
@@ -338,6 +345,37 @@ def render_answer_cta(spec):
     )
 
 
+def render_lead_form(key: str, *, compact: bool = False):
+    """Capture a callback request (name + phone + programme) inside the chat and
+    store it. Only shown when the Supabase store is configured."""
+    if not store.enabled():
+        return
+    if st.session_state.get("lead_done"):
+        st.markdown('<div class="nv-lead-done">✓ Thank you! Our team will '
+                    'reach out to you shortly.</div>', unsafe_allow_html=True)
+        return
+    label = "📞 Prefer we call you? Leave your number"
+    with st.expander(label, expanded=False):
+        with st.form(f"lead_{key}", clear_on_submit=False):
+            c1, c2 = st.columns(2)
+            name = c1.text_input("Your name", key=f"lead_name_{key}")
+            phone = c2.text_input("Phone / WhatsApp", key=f"lead_phone_{key}")
+            prog = st.selectbox("Interested in", config.PROGRAMMES,
+                                key=f"lead_prog_{key}")
+            submitted = st.form_submit_button("Request a callback",
+                                              use_container_width=True)
+        if submitted:
+            digits = re.sub(r"\D", "", phone or "")
+            if not name.strip() or len(digits) < 10:
+                st.warning("Please add your name and a valid phone number.")
+            else:
+                store.create_lead(name=name, phone=phone, programme=prog,
+                                  source="chat",
+                                  session_id=st.session_state.get("sid"))
+                st.session_state.lead_done = True
+                st.rerun()
+
+
 def render_empty_state():
     st.markdown(
         f'<p class="nv-intro">Hi, I\'m <b>{config.MASCOT_NAME}</b> — your friendly '
@@ -353,20 +391,27 @@ def render_empty_state():
 
 # ----------------------------------------------------------------------------- app
 def _hide_streamlit_badge():
-    """Hide the Community Cloud 'Built with Streamlit' bar + Fullscreen link."""
-    st.html(
-        """<script>
-        (function(){
-          function scrub(d){ if(!d) return; try{
-            d.querySelectorAll('a[href*="streamlit.io"],a[href*="streamlit.app"]').forEach(function(a){a.style.display='none';if(a.parentElement){a.parentElement.style.display='none';}});
-            Array.prototype.forEach.call(d.querySelectorAll('button,a,span'),function(el){if(el.childElementCount===0){var t=(el.textContent||'').trim();if(t==='Fullscreen'||t==='Built with Streamlit'){var p=el.closest('div');if(p){p.style.display='none';}}}});
-          }catch(e){} }
-          function kill(){ scrub(document); try{ if(window.parent&&window.parent!==window){ scrub(window.parent.document); } }catch(e){} }
-          setInterval(kill,400); kill();
-        })();
-        </script>""",
-        unsafe_allow_javascript=True,
-    )
+    """Hide the Community Cloud 'Built with Streamlit' bar + Fullscreen link.
+
+    The CSS block already hides the badge; this JS is a belt-and-suspenders extra
+    for stray runtime-injected elements. It's wrapped so an unsupported st.html
+    signature on any Streamlit version can never crash the app."""
+    try:
+        components.html(
+            """<script>
+            (function(){
+              function scrub(d){ if(!d) return; try{
+                d.querySelectorAll('a[href*="streamlit.io"],a[href*="streamlit.app"]').forEach(function(a){a.style.display='none';if(a.parentElement){a.parentElement.style.display='none';}});
+                Array.prototype.forEach.call(d.querySelectorAll('button,a,span'),function(el){if(el.childElementCount===0){var t=(el.textContent||'').trim();if(t==='Fullscreen'||t==='Built with Streamlit'){var p=el.closest('div');if(p){p.style.display='none';}}}});
+              }catch(e){} }
+              function kill(){ try{ if(window.parent&&window.parent!==window){ scrub(window.parent.document); } }catch(e){} scrub(document); }
+              setInterval(kill,400); kill();
+            })();
+            </script>""",
+            height=0,
+        )
+    except Exception:
+        pass
 
 
 def main():
@@ -384,6 +429,7 @@ def main():
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
+    st.session_state.setdefault("sid", uuid.uuid4().hex[:12])
 
     if not st.session_state.messages and not st.session_state.get("pending"):
         render_empty_state()
@@ -401,6 +447,7 @@ def main():
         last = msgs[-1]
         if last.get("cta"):
             render_answer_cta(last["cta"])
+            render_lead_form(len(msgs) - 1)          # callback capture on high intent
         if last.get("followups"):
             render_followups(last["followups"], len(msgs) - 1)
 
@@ -408,6 +455,21 @@ def main():
     prompt = typed or st.session_state.pop("pending", None)
     if not prompt:
         return
+
+    # Gentle abuse guard: cap messages per session so a public endpoint can't burn
+    # the shared Groq daily quota. Hand the parent to WhatsApp instead.
+    if sum(1 for m in msgs if m["role"] == "user") >= config.MAX_MESSAGES_PER_SESSION:
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": f"I've loved chatting with you! 🌱 For anything more, our "
+                       f"team will be delighted to help you directly on WhatsApp at "
+                       f"**{config.PHONE}**.",
+            "cta": {"lead": "Let's continue there:",
+                    "buttons": [("WhatsApp us", config.WHATSAPP_URL, True),
+                                ("Call us", config.CALL_URL, False)]},
+        })
+        st.rerun()
 
     st.session_state.messages.append({"role": "user", "content": prompt})
     render_user(prompt)
@@ -445,6 +507,10 @@ def main():
 
     followups = llm.suggest_followups(prompt, answer)
     cta = _cta_spec(prompt, answer)
+    # Analytics: what parents ask + whether we had grounded info for it (best-effort).
+    store.log_question(prompt, answered=bool(results),
+                       top_score=(results[0]["score"] if results else 0.0),
+                       session_id=st.session_state.get("sid"))
     st.session_state.messages.append(
         {"role": "assistant", "content": answer, "followups": followups, "cta": cta}
     )

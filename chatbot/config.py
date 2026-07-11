@@ -46,6 +46,22 @@ EMBED_MODEL = _get("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 RAG_TOP_K = int(_get("RAG_TOP_K", "5"))
 RAG_MIN_SCORE = float(_get("RAG_MIN_SCORE", "0.25"))
 
+# --- Leads & analytics (optional Supabase; dark until configured) ---
+SUPABASE_URL = _get("SUPABASE_URL", "")
+SUPABASE_KEY = _get("SUPABASE_KEY", "")        # service_role key — server-side only
+# Optional: POST each captured lead to this URL (Zapier / Make / n8n / Edge
+# Function) so the school gets a WhatsApp/email alert. Leave blank to just store.
+LEAD_WEBHOOK_URL = _get("LEAD_WEBHOOK_URL", "")
+# Gentle abuse guard: max parent messages per browser session before we nudge
+# them to WhatsApp (protects the shared Groq daily quota on a public endpoint).
+MAX_MESSAGES_PER_SESSION = int(_get("MAX_MESSAGES_PER_SESSION", "25"))
+
+# Programmes offered (for the lead form's "interested in" picker).
+PROGRAMMES = [
+    "Playgroup (2–3 yrs)", "Nursery (3–4 yrs)", "Kindergarten (4–6 yrs)",
+    "Daycare", "Enrichment", "Not sure yet",
+]
+
 # --- School identity ---
 SCHOOL_NAME = "Neevalay Tots"
 BRAND_NAME = "Ask Neevalay"

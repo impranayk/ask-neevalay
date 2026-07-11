@@ -1,0 +1,76 @@
+<!--
+  Ask Neevu — floating chat widget for neevalay.com
+  ---------------------------------------------------------------------------
+  HOW TO USE: paste this whole block just before the closing </body> tag on your
+  site (in WordPress: Appearance → a "Custom HTML" widget in the footer, or a
+  footer-scripts plugin). It adds a floating bubble bottom-right that opens the
+  assistant in a panel. Nothing else on your site is affected.
+
+  If your Streamlit URL ever changes, edit NEEVU_URL below.
+-->
+<div id="neevu-widget" aria-live="polite">
+  <button id="neevu-bubble" aria-label="Chat with Neevu" type="button">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#0E3B37"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/>
+    </svg>
+    <span>Ask&nbsp;Neevu</span>
+  </button>
+
+  <div id="neevu-panel" role="dialog" aria-label="Ask Neevalay" hidden>
+    <div id="neevu-head">
+      <span>🌱 Ask Neevalay</span>
+      <button id="neevu-close" aria-label="Close" type="button">&times;</button>
+    </div>
+    <iframe id="neevu-frame" title="Ask Neevalay" loading="lazy"
+            src="about:blank"></iframe>
+  </div>
+</div>
+
+<style>
+  #neevu-widget { position: fixed; right: 20px; bottom: 20px; z-index: 2147483000;
+    font-family: 'Nunito Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  #neevu-bubble { display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    border: 0; border-radius: 999px; padding: 12px 18px; color: #0E3B37; font-weight: 800;
+    font-size: 15px; background: linear-gradient(135deg, #5CCCCC 0%, #F9C764 100%);
+    box-shadow: 0 6px 20px rgba(14,59,55,.28); transition: transform .15s, box-shadow .15s; }
+  #neevu-bubble:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(14,59,55,.34); }
+  #neevu-bubble svg { flex: 0 0 auto; }
+  #neevu-panel { position: fixed; right: 20px; bottom: 88px; width: 390px; height: 600px;
+    max-height: calc(100vh - 110px); background: #F8F9F5; border-radius: 18px; overflow: hidden;
+    box-shadow: 0 18px 50px rgba(14,59,55,.34); border: 1px solid #E6EAE3;
+    display: flex; flex-direction: column; animation: neevu-in .18s ease; }
+  #neevu-head { display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; background: linear-gradient(135deg, #0E3B37 0%, #17514A 100%);
+    color: #fff; font-family: 'Nunito', system-ui, sans-serif; font-weight: 800; font-size: 15px; }
+  #neevu-close { background: transparent; border: 0; color: #fff; font-size: 24px; line-height: 1;
+    cursor: pointer; padding: 0 4px; opacity: .85; }
+  #neevu-close:hover { opacity: 1; }
+  #neevu-frame { border: 0; width: 100%; height: 100%; background: #F8F9F5; }
+  @keyframes neevu-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @media (max-width: 480px) {
+    #neevu-panel { right: 0; left: 0; bottom: 0; width: 100%; height: 88vh; max-height: 88vh;
+      border-radius: 18px 18px 0 0; }
+    #neevu-widget { right: 14px; bottom: 14px; }
+  }
+</style>
+
+<script>
+  (function () {
+    var NEEVU_URL = "https://ask-neevalay.streamlit.app/?mini";
+    var w = document.getElementById("neevu-widget");
+    var bubble = document.getElementById("neevu-bubble");
+    var panel = document.getElementById("neevu-panel");
+    var frame = document.getElementById("neevu-frame");
+    var close = document.getElementById("neevu-close");
+    var loaded = false;
+    function open() {
+      if (!loaded) { frame.src = NEEVU_URL; loaded = true; }   // lazy-load on first open
+      panel.hidden = false; bubble.style.display = "none";
+    }
+    function hide() { panel.hidden = true; bubble.style.display = "inline-flex"; }
+    bubble.addEventListener("click", open);
+    close.addEventListener("click", hide);
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !panel.hidden) hide(); });
+  })();
+</script>
