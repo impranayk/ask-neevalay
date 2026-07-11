@@ -11,7 +11,6 @@ import uuid
 from functools import lru_cache
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 from chatbot import config, llm, rag, store
 
@@ -393,32 +392,9 @@ def render_empty_state():
 
 
 # ----------------------------------------------------------------------------- app
-def _hide_streamlit_badge():
-    """Hide the Community Cloud 'Built with Streamlit' bar + Fullscreen link.
-
-    The CSS block already hides the badge; this JS is a belt-and-suspenders extra
-    for stray runtime-injected elements. It's wrapped so an unsupported st.html
-    signature on any Streamlit version can never crash the app."""
-    try:
-        components.html(
-            """<script>
-            (function(){
-              function scrub(d){ if(!d) return; try{
-                d.querySelectorAll('a[href*="streamlit.io"],a[href*="streamlit.app"]').forEach(function(a){a.style.display='none';if(a.parentElement){a.parentElement.style.display='none';}});
-                Array.prototype.forEach.call(d.querySelectorAll('button,a,span'),function(el){if(el.childElementCount===0){var t=(el.textContent||'').trim();if(t==='Fullscreen'||t==='Built with Streamlit'){var p=el.closest('div');if(p){p.style.display='none';}}}});
-              }catch(e){} }
-              function kill(){ try{ if(window.parent&&window.parent!==window){ scrub(window.parent.document); } }catch(e){} scrub(document); }
-              setInterval(kill,400); kill();
-            })();
-            </script>""",
-            height=0,
-        )
-    except Exception:
-        pass
-
-
 def main():
-    _hide_streamlit_badge()
+    # The 'Built with Streamlit' badge + viewer chrome are hidden by the CSS block
+    # above (a[href*="streamlit.io/.app"], viewerBadge, etc.) — no JS needed.
     render_sidebar()
     render_header()
 
