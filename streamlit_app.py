@@ -369,12 +369,14 @@ def render_lead_form(key: str, *, compact: bool = False):
             digits = re.sub(r"\D", "", phone or "")
             if not name.strip() or len(digits) < 10:
                 st.warning("Please add your name and a valid phone number.")
-            else:
-                store.create_lead(name=name, phone=phone, programme=prog,
-                                  source="chat",
-                                  session_id=st.session_state.get("sid"))
+            elif store.create_lead(name=name, phone=phone, programme=prog,
+                                   source="chat",
+                                   session_id=st.session_state.get("sid")):
                 st.session_state.lead_done = True
                 st.rerun()
+            else:
+                st.warning("Sorry, I couldn't save that just now — please WhatsApp "
+                           f"us at {config.PHONE} and we'll help you right away.")
 
 
 def render_empty_state():

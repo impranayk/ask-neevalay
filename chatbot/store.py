@@ -48,7 +48,14 @@ def _insert(table: str, row: dict) -> bool:
         r = requests.post(_rest(table), headers=_headers(), json=row, timeout=15)
         r.raise_for_status()
         return True
-    except Exception:
+    except Exception as exc:
+        # Surface the reason in the Streamlit Cloud logs (Manage app → logs) so a
+        # rejected write — e.g. wrong key or an RLS block — is diagnosable, without
+        # ever leaking to the parent-facing UI.
+        resp = getattr(exc, "response", None)
+        status = getattr(resp, "status_code", "?")
+        body = (getattr(resp, "text", "") or "")[:300]
+        print(f"[store] insert into {table} failed (HTTP {status}): {body} — {exc}")
         return False
 
 
