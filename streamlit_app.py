@@ -232,10 +232,10 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
   padding: 13px 16px; margin: 6px 0; }
 .nv-error-text { color: var(--text); font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
 .nv-error-cta { display: flex; flex-wrap: wrap; gap: 8px; }
-/* ---- Language toggle — a tiny EN/हिं pill floating just above the chat box ---- */
-.st-key-langtoggle { position: fixed; right: 16px; bottom: 76px; z-index: 1000; margin: 0 !important; width: auto !important; }
-.st-key-langtoggle [role="radiogroup"] { display: flex !important; gap: 0 !important; background: #fff;
-  border: 1px solid var(--border); border-radius: 999px; padding: 2px; box-shadow: 0 2px 10px rgba(59,74,68,.16); }
+/* ---- Language toggle — a small EN/हिं pill in the top-right header corner ---- */
+.st-key-langtoggle { display: flex; justify-content: flex-end; margin: 0; }
+.st-key-langtoggle [role="radiogroup"] { display: inline-flex !important; gap: 0 !important; background: #fff;
+  border: 1px solid var(--border); border-radius: 999px; padding: 2px; }
 .st-key-langtoggle [role="radiogroup"] > label { margin: 0 !important; padding: 3px 11px !important;
   border-radius: 999px !important; cursor: pointer; display: flex !important; justify-content: center;
   transition: background .12s; }
@@ -243,7 +243,6 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 .st-key-langtoggle [role="radiogroup"] > label:has(input:checked) { background: var(--aqua) !important; }
 .st-key-langtoggle [role="radiogroup"] > label:has(input:checked) p { color: #0E3B37 !important; font-weight: 800 !important; }
 .st-key-langtoggle [role="radiogroup"] p { font-size: 12px !important; margin: 0 !important; font-weight: 700; }
-@media (max-width: 600px) { .st-key-langtoggle { bottom: 70px; } }
 /* ---- Lead-capture card ("Prefer we call you?") — warm, on-brand ---- */
 [class*="st-key-nvlead_"] details { border: 1.5px solid #cfeeee !important; border-radius: 14px !important;
   background: var(--aqua-soft) !important; box-shadow: 0 2px 10px rgba(59,74,68,.05) !important; }
@@ -307,13 +306,15 @@ def render_contactbar():
 
 def render_header():
     if "mini" in st.query_params:
-        _, right = st.columns([2, 1])
-        with right:
+        _, c_lang, c_new = st.columns([1.1, 0.9, 1.1], vertical_alignment="center")
+        with c_lang:
+            render_lang_toggle()
+        with c_new:
             st.button("↺  New chat", key="new_chat", on_click=clear_chat,
                       use_container_width=True)
         return
     header_logo = _data_uri(config.HEADER_LOGO_PATH)
-    left, right = st.columns([5, 1.4], vertical_alignment="center")
+    left, c_lang, right = st.columns([4, 0.9, 1.3], vertical_alignment="center")
     with left:
         if header_logo:
             brand = (f'<img class="nv-logo" src="{header_logo}" '
@@ -329,6 +330,8 @@ def render_header():
             """,
             unsafe_allow_html=True,
         )
+    with c_lang:
+        render_lang_toggle()
     with right:
         st.button("↺  New chat", key="new_chat", on_click=clear_chat,
                   use_container_width=True)
@@ -510,7 +513,6 @@ def main():
         if last.get("followups"):
             render_followups(last["followups"], len(msgs) - 1)
 
-    render_lang_toggle()          # tiny EN/हिं toggle, CSS-pinned above the chat box
     placeholder = ("नीवू से नीवालय टॉट्स के बारे में पूछें…" if _reply_lang() == "हिंदी"
                    else f"Ask {config.MASCOT_NAME} about Neevalay Tots…")
     typed = st.chat_input(placeholder)
