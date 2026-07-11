@@ -232,12 +232,13 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
   padding: 13px 16px; margin: 6px 0; }
 .nv-error-text { color: var(--text); font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
 .nv-error-cta { display: flex; flex-wrap: wrap; gap: 8px; }
-/* ---- Language toggle (English / हिंदी) — compact right-aligned pill ---- */
-.st-key-langtoggle { display: flex; justify-content: flex-end; margin: -4px 0 10px; }
-.st-key-langtoggle [role="radiogroup"] { gap: 0 !important; background: #fff;
-  border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
-.st-key-langtoggle [role="radiogroup"] > label { margin: 0 !important; padding: 3px 15px !important;
-  border-radius: 999px !important; cursor: pointer; transition: background .12s; }
+/* ---- Language toggle — a compact full-width segmented pill under New chat ---- */
+.st-key-langtoggle { margin: 6px 0 0; }
+.st-key-langtoggle [role="radiogroup"] { display: flex !important; gap: 0 !important; width: 100%;
+  background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 2px; }
+.st-key-langtoggle [role="radiogroup"] > label { flex: 1; display: flex !important; justify-content: center;
+  margin: 0 !important; padding: 4px 6px !important; border-radius: 999px !important; cursor: pointer;
+  transition: background .12s; }
 .st-key-langtoggle [role="radiogroup"] > label > div:first-child { display: none !important; }
 .st-key-langtoggle [role="radiogroup"] > label:has(input:checked) { background: var(--aqua-soft) !important; }
 .st-key-langtoggle [role="radiogroup"] > label:has(input:checked) p { color: var(--aqua-dark) !important;
@@ -306,13 +307,14 @@ def render_contactbar():
 
 def render_header():
     if "mini" in st.query_params:
-        _, right = st.columns([2, 1])
+        _, right = st.columns([1.5, 1])
         with right:
             st.button("↺  New chat", key="new_chat", on_click=clear_chat,
                       use_container_width=True)
+            render_lang_toggle()
         return
     header_logo = _data_uri(config.HEADER_LOGO_PATH)
-    left, right = st.columns([5, 1.4], vertical_alignment="center")
+    left, right = st.columns([4, 1.7], vertical_alignment="center")
     with left:
         if header_logo:
             brand = (f'<img class="nv-logo" src="{header_logo}" '
@@ -331,6 +333,7 @@ def render_header():
     with right:
         st.button("↺  New chat", key="new_chat", on_click=clear_chat,
                   use_container_width=True)
+        render_lang_toggle()
     st.markdown('<hr class="nv-rule">', unsafe_allow_html=True)
     render_contactbar()
 
@@ -475,7 +478,6 @@ def main():
     # above (a[href*="streamlit.io/.app"], viewerBadge, etc.) — no JS needed.
     render_sidebar()
     render_header()
-    render_lang_toggle()
 
     if not config.GROQ_API_KEY:
         st.warning(
