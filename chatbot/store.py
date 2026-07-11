@@ -100,7 +100,9 @@ def _notify_webhook(row: dict) -> None:
     try:
         import httpx
 
-        httpx.post(url, json=row, timeout=10)
+        # follow_redirects: Google Apps Script web apps answer with a 302 to
+        # googleusercontent.com; following it completes the round-trip cleanly.
+        httpx.post(url, json=row, timeout=10, follow_redirects=True)
     except Exception:
         pass
 
