@@ -63,25 +63,33 @@ def _is_rate_limit(exc) -> bool:
             or getattr(exc, "status_code", None) == 429)
 
 
-def _complete(**kw):
-    """One completion (streaming or not) with automatic key failover on a
-    daily-limit / rate-limit error. Returns the SDK response object."""
+def _complete(*, models=None, **kw):
+    """One completion (streaming or not) with automatic failover on a rate-limit /
+    daily-quota error: it tries each model in `models` (or the single `model=`),
+    and for each, every configured key. It only moves on for rate-limit errors —
+    any other error surfaces at once. So when the primary model is out of quota it
+    silently drops to the lighter fallback, and parents keep getting answers."""
     keys = _groq_keys()
     if not keys:
         raise RuntimeError(
             "GROQ_API_KEY is not set. Copy .env.example to .env and add your "
             "free key from https://console.groq.com/keys"
         )
+    if not models:
+        models = [kw.pop("model")]
+    else:
+        kw.pop("model", None)
     last = None
-    for i, key in enumerate(keys):
-        try:
-            return Groq(api_key=key).chat.completions.create(**kw)
-        except Exception as exc:
-            last = exc
-            if _is_rate_limit(exc) and i < len(keys) - 1:
-                continue
-            raise
-    raise last
+    for model in models:
+        for key in keys:
+            try:
+                return Groq(api_key=key).chat.completions.create(model=model, **kw)
+            except Exception as exc:
+                last = exc
+                if _is_rate_limit(exc):
+                    continue          # next key, then next (lighter) model
+                raise                 # a real error → surface immediately
+    raise last                        # every model+key was rate-limited
 
 
 def build_messages(question: str, context: str, history: List[Dict]) -> List[Dict]:
@@ -145,7 +153,7 @@ def stream_answer(question: str, context: str, history: List[Dict]) -> Iterator[
     """Yield the answer token-by-token for a live typing effect."""
     messages = build_messages(question, context, history)
     completion = _complete(
-        model=config.GROQ_MODEL, messages=messages,
+        models=config.GROQ_MODELS, messages=messages,
         temperature=0.35, max_tokens=800, stream=True,
     )
     for chunk in completion:

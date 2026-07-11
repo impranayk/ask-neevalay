@@ -40,7 +40,20 @@ def _get(name: str, default: str = "") -> str:
 # --- LLM (Groq, open models) ---
 GROQ_API_KEY = _get("GROQ_API_KEY")        # one key, or several comma-separated
 GROQ_API_KEY2 = _get("GROQ_API_KEY2", "")  # optional 2nd-account key for failover
-GROQ_MODEL = _get("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODEL = _get("GROQ_MODEL", "llama-3.3-70b-versatile")          # primary
+GROQ_MODEL_FALLBACK = _get("GROQ_MODEL_FALLBACK", "llama-3.1-8b-instant")  # lighter
+
+# Ordered answer-model chain: the app tries the primary, then falls back to the
+# lighter model when the primary is rate-limited / out of its daily free quota —
+# so parents keep getting answers instead of an error. Override with a
+# comma-separated GROQ_MODELS if you want a custom chain.
+_models_raw = _get("GROQ_MODELS", "")
+if _models_raw:
+    GROQ_MODELS = [m.strip() for m in _models_raw.split(",") if m.strip()]
+else:
+    GROQ_MODELS = [GROQ_MODEL, GROQ_MODEL_FALLBACK]
+_seen = set()
+GROQ_MODELS = [m for m in GROQ_MODELS if m and not (m in _seen or _seen.add(m))]
 
 # --- Retrieval / RAG ---
 EMBED_MODEL = _get("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
