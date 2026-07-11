@@ -215,6 +215,11 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 .nv-cta-lead { font-weight: 700; font-size: 13.5px; color: var(--text); margin-right: 2px; }
 .nv-lead-done { background: var(--aqua-soft); border: 1px solid #cfeeee; border-radius: 12px;
   padding: 10px 14px; margin: 8px 0; color: var(--aqua-dark); font-weight: 700; font-size: 14px; }
+/* ---- Friendly fallback card (model can't answer → WhatsApp/Call) ---- */
+.nv-error-card { background: #FEFBF2; border: 1px solid #F0D9AE; border-radius: 14px;
+  padding: 13px 16px; margin: 6px 0; }
+.nv-error-text { color: var(--text); font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
+.nv-error-cta { display: flex; flex-wrap: wrap; gap: 8px; }
 /* ---- Lead-capture card ("Prefer we call you?") — warm, on-brand ---- */
 [class*="st-key-nvlead_"] details { border: 1.5px solid #cfeeee !important; border-radius: 14px !important;
   background: var(--aqua-soft) !important; box-shadow: 0 2px 10px rgba(59,74,68,.05) !important; }
@@ -347,6 +352,22 @@ def render_followups(items, midx):
     for i, q in enumerate(items):
         cols[i % 2].button(q, key=f"fu_{midx}_{i}", use_container_width=True,
                            on_click=pick_suggestion, args=(q,))
+
+
+def render_error_card(rate_limited: bool = False):
+    """A warm, on-brand fallback when the model can't answer — turns a dead-end
+    into a WhatsApp/Call hand-off instead of a bare error line."""
+    lead = ("We're getting a lot of questions right now"
+            if rate_limited else "I'm having a little trouble answering right now")
+    st.markdown(
+        f'<div class="nv-error-card"><div class="nv-error-text">{lead} — but our '
+        'team would be delighted to help you directly. Reach us here:</div>'
+        '<div class="nv-error-cta">'
+        f'<a class="nv-cta nv-cta-primary" href="{config.WHATSAPP_URL}" target="_blank">WhatsApp us</a>'
+        f'<a class="nv-cta nv-cta-ghost" href="{config.CALL_URL}">Call us</a>'
+        '</div></div>',
+        unsafe_allow_html=True,
+    )
 
 
 def render_answer_cta(spec):
@@ -500,12 +521,9 @@ def main():
 
         try:
             answer = st.write_stream(llm.stream_answer(prompt, context, history))
-        except Exception:
-            st.warning(
-                "I'm having a little trouble answering right now — sorry! Please try "
-                f"again in a moment, or reach our team on WhatsApp at {config.PHONE} "
-                "and we'll be happy to help."
-            )
+        except Exception as exc:
+            print(f"[llm] answer failed: {type(exc).__name__}: {exc}")  # → app logs
+            render_error_card(rate_limited=llm._is_rate_limit(exc))
             st.session_state.messages.pop()
             return
 
