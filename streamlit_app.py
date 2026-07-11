@@ -360,7 +360,8 @@ def render_lead_form(key: str, *, compact: bool = False):
             c1, c2 = st.columns(2)
             name = c1.text_input("Your name", key=f"lead_name_{key}")
             phone = c2.text_input("Phone / WhatsApp", key=f"lead_phone_{key}")
-            prog = st.selectbox("Interested in", config.PROGRAMMES,
+            prog = st.selectbox("Interested in",
+                                getattr(config, "PROGRAMMES", ["General enquiry"]),
                                 key=f"lead_prog_{key}")
             submitted = st.form_submit_button("Request a callback",
                                               use_container_width=True)
@@ -458,7 +459,7 @@ def main():
 
     # Gentle abuse guard: cap messages per session so a public endpoint can't burn
     # the shared Groq daily quota. Hand the parent to WhatsApp instead.
-    if sum(1 for m in msgs if m["role"] == "user") >= config.MAX_MESSAGES_PER_SESSION:
+    if sum(1 for m in msgs if m["role"] == "user") >= getattr(config, "MAX_MESSAGES_PER_SESSION", 25):
         st.session_state.messages.append({"role": "user", "content": prompt})
         st.session_state.messages.append({
             "role": "assistant",

@@ -14,20 +14,27 @@ from typing import Optional
 from . import config
 
 
+def _cfg(name: str, default: str = "") -> str:
+    """Read a config value defensively — a missing attribute (e.g. an app running
+    a stale build mid-deploy) degrades to 'off' instead of crashing the app."""
+    return getattr(config, name, default)
+
+
 def enabled() -> bool:
-    return bool(config.SUPABASE_URL and config.SUPABASE_KEY)
+    return bool(_cfg("SUPABASE_URL") and _cfg("SUPABASE_KEY"))
 
 
 def _headers() -> dict:
+    key = _cfg("SUPABASE_KEY")
     return {
-        "apikey": config.SUPABASE_KEY,
-        "Authorization": f"Bearer {config.SUPABASE_KEY}",
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
     }
 
 
 def _rest(table: str) -> str:
-    return f"{config.SUPABASE_URL.rstrip('/')}/rest/v1/{table}"
+    return f"{_cfg('SUPABASE_URL').rstrip('/')}/rest/v1/{table}"
 
 
 def _insert(table: str, row: dict) -> bool:
@@ -67,12 +74,13 @@ def create_lead(*, name: str, phone: str, programme: str = None,
 def _notify_webhook(row: dict) -> None:
     """Fire-and-forget POST so a no-code automation (Zapier/Make/n8n) can turn a
     lead into a WhatsApp/email alert. Silent if unset or on error."""
-    if not config.LEAD_WEBHOOK_URL:
+    url = _cfg("LEAD_WEBHOOK_URL")
+    if not url:
         return
     try:
         import requests
 
-        requests.post(config.LEAD_WEBHOOK_URL, json=row, timeout=10)
+        requests.post(url, json=row, timeout=10)
     except Exception:
         pass
 
