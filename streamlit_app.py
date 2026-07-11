@@ -378,6 +378,8 @@ def render_lead_form(key: str, *, compact: bool = False):
             c1, c2 = st.columns(2)
             name = c1.text_input("Your name", key=f"lead_name_{key}")
             phone = c2.text_input("Phone / WhatsApp", key=f"lead_phone_{key}")
+            email = st.text_input("Email (optional)", key=f"lead_email_{key}",
+                                  placeholder="you@email.com")
             prog = st.selectbox("Interested in",
                                 getattr(config, "PROGRAMMES", ["General enquiry"]),
                                 key=f"lead_prog_{key}")
@@ -387,7 +389,7 @@ def render_lead_form(key: str, *, compact: bool = False):
             digits = re.sub(r"\D", "", phone or "")
             if not name.strip() or len(digits) < 10:
                 st.warning("Please add your name and a valid phone number.")
-            elif store.create_lead(name=name, phone=phone, programme=prog,
+            elif store.create_lead(name=name, phone=phone, email=email, programme=prog,
                                    source="chat",
                                    session_id=st.session_state.get("sid")):
                 st.session_state.lead_done = True

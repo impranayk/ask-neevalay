@@ -72,13 +72,15 @@ def _insert(table: str, row: dict) -> bool:
         return False
 
 
-def create_lead(*, name: str, phone: str, programme: str = None,
+def create_lead(*, name: str, phone: str, email: str = None, programme: str = None,
                 child_age: str = None, message: str = None,
                 source: str = "chat", session_id: str = None) -> bool:
-    """Store a parent enquiry, and (if configured) fan it out to a webhook so the
-    school gets a WhatsApp/email alert."""
+    """Store a parent enquiry (Supabase) AND fan it out to the webhook (e.g. the
+    WordPress endpoint → wp-admin + email/Telegram). Succeeds if EITHER lands, so
+    a missing Supabase column can't lose a lead the webhook already captured."""
     row = {
         "name": (name or "").strip(),
+        "email": (email or "").strip() or None,
         "phone": (phone or "").strip(),
         "programme": programme,
         "child_age": (child_age or "").strip() or None,
@@ -86,25 +88,26 @@ def create_lead(*, name: str, phone: str, programme: str = None,
         "source": source,
         "session_id": session_id,
     }
-    ok = _insert("leads", row)
-    _notify_webhook(row)
-    return ok
+    ok_db = _insert("leads", row)
+    ok_hook = _notify_webhook(row)
+    return ok_db or ok_hook
 
 
-def _notify_webhook(row: dict) -> None:
-    """Fire-and-forget POST so a no-code automation (Zapier/Make/n8n) can turn a
-    lead into a WhatsApp/email alert. Silent if unset or on error."""
+def _notify_webhook(row: dict) -> bool:
+    """POST the lead to LEAD_WEBHOOK_URL (WordPress endpoint / Zapier / etc.).
+    Returns True on a 2xx. Silent (False) if unset or on error."""
     url = _cfg("LEAD_WEBHOOK_URL")
     if not url:
-        return
+        return False
     try:
         import httpx
 
         # follow_redirects: Google Apps Script web apps answer with a 302 to
         # googleusercontent.com; following it completes the round-trip cleanly.
-        httpx.post(url, json=row, timeout=10, follow_redirects=True)
+        r = httpx.post(url, json=row, timeout=10, follow_redirects=True)
+        return 200 <= r.status_code < 300
     except Exception:
-        pass
+        return False
 
 
 def log_question(question: str, answered: bool, top_score: float = 0.0,
