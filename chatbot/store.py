@@ -20,6 +20,15 @@ def _cfg(name: str, default: str = "") -> str:
     return getattr(config, name, default)
 
 
+_last_error = None
+
+
+def last_error():
+    """The most recent write failure (status + body), for a ?debug view. None if
+    the last write succeeded."""
+    return _last_error
+
+
 def enabled() -> bool:
     return bool(_cfg("SUPABASE_URL") and _cfg("SUPABASE_KEY"))
 
@@ -40,22 +49,26 @@ def _rest(table: str) -> str:
 def _insert(table: str, row: dict) -> bool:
     """Best-effort insert — never raises to the caller (a logging/lead failure
     must not break the chat)."""
+    global _last_error
     if not enabled():
+        _last_error = "store disabled (no SUPABASE_URL / SUPABASE_KEY)"
         return False
     try:
         import requests
 
         r = requests.post(_rest(table), headers=_headers(), json=row, timeout=15)
         r.raise_for_status()
+        _last_error = None
         return True
     except Exception as exc:
-        # Surface the reason in the Streamlit Cloud logs (Manage app → logs) so a
-        # rejected write — e.g. wrong key or an RLS block — is diagnosable, without
-        # ever leaking to the parent-facing UI.
+        # Record the reason: printed to the app logs AND kept for the ?debug view,
+        # so a rejected write (wrong key / RLS block) is diagnosable — never leaked
+        # to the parent-facing UI.
         resp = getattr(exc, "response", None)
         status = getattr(resp, "status_code", "?")
         body = (getattr(resp, "text", "") or "")[:300]
-        print(f"[store] insert into {table} failed (HTTP {status}): {body} — {exc}")
+        _last_error = f"HTTP {status}: {body} — {str(exc)[:120]}"
+        print(f"[store] insert into {table} failed ({_last_error})")
         return False
 
 

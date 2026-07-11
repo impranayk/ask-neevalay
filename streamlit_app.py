@@ -374,8 +374,12 @@ def render_lead_form(key: str, *, compact: bool = False):
                 st.session_state.lead_done = True
                 st.rerun()
             else:
-                st.warning("Sorry, I couldn't save that just now — please WhatsApp "
-                           f"us at {config.PHONE} and we'll help you right away.")
+                msg = ("Sorry, I couldn't save that just now — please WhatsApp "
+                       f"us at {config.PHONE} and we'll help you right away.")
+                # Add ?debug to the URL to see the exact API error inline.
+                if "debug" in st.query_params and store.last_error():
+                    msg += f"\n\n**Debug:** `{store.last_error()}`"
+                st.warning(msg)
 
 
 def render_empty_state():
