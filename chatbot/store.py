@@ -54,9 +54,9 @@ def _insert(table: str, row: dict) -> bool:
         _last_error = "store disabled (no SUPABASE_URL / SUPABASE_KEY)"
         return False
     try:
-        import requests
+        import httpx
 
-        r = requests.post(_rest(table), headers=_headers(), json=row, timeout=15)
+        r = httpx.post(_rest(table), headers=_headers(), json=row, timeout=15)
         r.raise_for_status()
         _last_error = None
         return True
@@ -98,9 +98,9 @@ def _notify_webhook(row: dict) -> None:
     if not url:
         return
     try:
-        import requests
+        import httpx
 
-        requests.post(url, json=row, timeout=10)
+        httpx.post(url, json=row, timeout=10)
     except Exception:
         pass
 
