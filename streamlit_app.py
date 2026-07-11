@@ -232,18 +232,18 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
   padding: 13px 16px; margin: 6px 0; }
 .nv-error-text { color: var(--text); font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
 .nv-error-cta { display: flex; flex-wrap: wrap; gap: 8px; }
-/* ---- Language toggle — a compact full-width segmented pill under New chat ---- */
-.st-key-langtoggle { margin: 6px 0 0; }
-.st-key-langtoggle [role="radiogroup"] { display: flex !important; gap: 0 !important; width: 100%;
-  background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 2px; }
-.st-key-langtoggle [role="radiogroup"] > label { flex: 1; display: flex !important; justify-content: center;
-  margin: 0 !important; padding: 4px 6px !important; border-radius: 999px !important; cursor: pointer;
+/* ---- Language toggle — a tiny EN/हिं pill floating just above the chat box ---- */
+.st-key-langtoggle { position: fixed; right: 16px; bottom: 76px; z-index: 1000; margin: 0 !important; width: auto !important; }
+.st-key-langtoggle [role="radiogroup"] { display: flex !important; gap: 0 !important; background: #fff;
+  border: 1px solid var(--border); border-radius: 999px; padding: 2px; box-shadow: 0 2px 10px rgba(59,74,68,.16); }
+.st-key-langtoggle [role="radiogroup"] > label { margin: 0 !important; padding: 3px 11px !important;
+  border-radius: 999px !important; cursor: pointer; display: flex !important; justify-content: center;
   transition: background .12s; }
 .st-key-langtoggle [role="radiogroup"] > label > div:first-child { display: none !important; }
-.st-key-langtoggle [role="radiogroup"] > label:has(input:checked) { background: var(--aqua-soft) !important; }
-.st-key-langtoggle [role="radiogroup"] > label:has(input:checked) p { color: var(--aqua-dark) !important;
-  font-weight: 800 !important; }
-.st-key-langtoggle [role="radiogroup"] p { font-size: 13px !important; margin: 0 !important; }
+.st-key-langtoggle [role="radiogroup"] > label:has(input:checked) { background: var(--aqua) !important; }
+.st-key-langtoggle [role="radiogroup"] > label:has(input:checked) p { color: #0E3B37 !important; font-weight: 800 !important; }
+.st-key-langtoggle [role="radiogroup"] p { font-size: 12px !important; margin: 0 !important; font-weight: 700; }
+@media (max-width: 600px) { .st-key-langtoggle { bottom: 70px; } }
 /* ---- Lead-capture card ("Prefer we call you?") — warm, on-brand ---- */
 [class*="st-key-nvlead_"] details { border: 1.5px solid #cfeeee !important; border-radius: 14px !important;
   background: var(--aqua-soft) !important; box-shadow: 0 2px 10px rgba(59,74,68,.05) !important; }
@@ -307,14 +307,13 @@ def render_contactbar():
 
 def render_header():
     if "mini" in st.query_params:
-        _, right = st.columns([1.5, 1])
+        _, right = st.columns([2, 1])
         with right:
             st.button("↺  New chat", key="new_chat", on_click=clear_chat,
                       use_container_width=True)
-            render_lang_toggle()
         return
     header_logo = _data_uri(config.HEADER_LOGO_PATH)
-    left, right = st.columns([4, 1.7], vertical_alignment="center")
+    left, right = st.columns([5, 1.4], vertical_alignment="center")
     with left:
         if header_logo:
             brand = (f'<img class="nv-logo" src="{header_logo}" '
@@ -333,7 +332,6 @@ def render_header():
     with right:
         st.button("↺  New chat", key="new_chat", on_click=clear_chat,
                   use_container_width=True)
-        render_lang_toggle()
     st.markdown('<hr class="nv-rule">', unsafe_allow_html=True)
     render_contactbar()
 
@@ -371,10 +369,11 @@ def pick_suggestion(question: str):
 
 
 def render_lang_toggle():
-    """A compact English / हिंदी pill so parents pick the reply language."""
+    """A tiny EN / हिं toggle floating just above the chat box."""
     with st.container(key="langtoggle"):
         st.radio("Language", ["English", "हिंदी"], horizontal=True,
-                 key="reply_lang", label_visibility="collapsed")
+                 key="reply_lang", label_visibility="collapsed",
+                 format_func=lambda x: "EN" if x == "English" else "हिं")
 
 
 def render_followups(items, midx):
@@ -511,6 +510,7 @@ def main():
         if last.get("followups"):
             render_followups(last["followups"], len(msgs) - 1)
 
+    render_lang_toggle()          # tiny EN/हिं toggle, CSS-pinned above the chat box
     placeholder = ("नीवू से नीवालय टॉट्स के बारे में पूछें…" if _reply_lang() == "हिंदी"
                    else f"Ask {config.MASCOT_NAME} about Neevalay Tots…")
     typed = st.chat_input(placeholder)
