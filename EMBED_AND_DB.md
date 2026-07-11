@@ -78,6 +78,27 @@ SUPABASE_KEY = "your-service_role-key"     # the secret key, NOT the anon key
   yet. Add those answers to **[data/knowledge.md](data/knowledge.md)** (or the
   website) and rebuild the index.
 
+### d. Free lead delivery → Google Sheet (recommended)
+
+Get every lead into a **Google Sheet** (and optionally an email) — 100% free, no
+third-party service. Uses the `LEAD_WEBHOOK_URL` the app already posts to.
+
+1. Create a sheet at <https://sheets.new> — name it e.g. "Neevalay Leads".
+2. **Extensions → Apps Script**. Delete the default code and paste
+   **[embed/google-sheet-leads.gs](embed/google-sheet-leads.gs)**.
+   *(Optional: set `NOTIFY_EMAIL = "you@neevalay.com"` at the top for an email per lead.)*
+3. **Deploy → New deployment** → gear ⚙️ → **Web app**.
+   - Execute as: **Me**
+   - Who has access: **Anyone**  ← required so the bot can post
+4. **Deploy** → authorize (it's your own script; "Advanced → Go to project → Allow").
+5. Copy the **Web app URL** (ends in `/exec`).
+6. Add it to the Streamlit secrets:
+   ```toml
+   LEAD_WEBHOOK_URL = "https://script.google.com/macros/s/…/exec"
+   ```
+7. Reboot → submit a test callback → a row appears in the Sheet. Bookmark it and
+   **Share** it with your team.
+
 ---
 
 ## 2. Embed on neevalay.com
