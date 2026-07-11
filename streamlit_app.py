@@ -80,12 +80,16 @@ def _data_uri(path) -> str:
 
 @lru_cache(maxsize=1)
 def logo_image():
-    """PIL image for the page icon + assistant avatar (falls back to a sprout)."""
+    """PIL image for the page icon + assistant avatar (falls back to a sprout).
+
+    Prefer the SQUARE favicon so the browser-tab icon isn't stretched; fall back
+    to the portrait logo only if the favicon is missing."""
     try:
         from PIL import Image
 
-        if config.LOGO_PATH.exists():
-            return Image.open(config.LOGO_PATH)
+        for p in (config.FAVICON_PATH, config.LOGO_PATH):
+            if p.exists():
+                return Image.open(p)
     except Exception:
         pass
     return "🌱"
@@ -211,6 +215,21 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 .nv-cta-lead { font-weight: 700; font-size: 13.5px; color: var(--text); margin-right: 2px; }
 .nv-lead-done { background: var(--aqua-soft); border: 1px solid #cfeeee; border-radius: 12px;
   padding: 10px 14px; margin: 8px 0; color: var(--aqua-dark); font-weight: 700; font-size: 14px; }
+/* ---- Lead-capture card ("Prefer we call you?") — warm, on-brand ---- */
+[class*="st-key-nvlead_"] details { border: 1.5px solid #cfeeee !important; border-radius: 14px !important;
+  background: var(--aqua-soft) !important; box-shadow: 0 2px 10px rgba(59,74,68,.05) !important; }
+[class*="st-key-nvlead_"] summary { font-family: 'Nunito', sans-serif !important; font-weight: 800 !important;
+  color: var(--text) !important; font-size: 14.5px !important; }
+[class*="st-key-nvlead_"] summary [data-testid="stIconMaterial"],
+[class*="st-key-nvlead_"] summary svg { color: var(--clay) !important; fill: var(--clay) !important; }
+/* the "Request a callback" submit as the clay CTA (matches the site's Book-a-visit) */
+[class*="st-key-nvlead_"] [data-testid="stFormSubmitButton"] button { background: var(--clay) !important;
+  color: #fff !important; border: 0 !important; border-radius: 999px !important; font-weight: 800 !important;
+  font-family: 'Nunito', sans-serif !important; box-shadow: 0 2px 8px rgba(215,122,97,.28) !important; }
+[class*="st-key-nvlead_"] [data-testid="stFormSubmitButton"] button:hover { background: var(--clay-dark) !important;
+  transform: translateY(-1px); }
+[class*="st-key-nvlead_"] [data-baseweb="input"],
+[class*="st-key-nvlead_"] [data-baseweb="select"] > div:first-child { border-radius: 10px !important; }
 div[data-testid="stButton"] > button {
   border: 1.5px solid var(--border); background: #fff; color: var(--text);
   border-radius: 999px; padding: 9px 16px; font-size: 13.5px; font-weight: 600;
@@ -353,8 +372,8 @@ def render_lead_form(key: str, *, compact: bool = False):
         st.markdown('<div class="nv-lead-done">✓ Thank you! Our team will '
                     'reach out to you shortly.</div>', unsafe_allow_html=True)
         return
-    label = "📞 Prefer we call you? Leave your number"
-    with st.expander(label, expanded=False):
+    with st.container(key=f"nvlead_{key}"), \
+            st.expander("Prefer we call you? Leave your number", icon=":material/call:"):
         with st.form(f"lead_{key}", clear_on_submit=False):
             c1, c2 = st.columns(2)
             name = c1.text_input("Your name", key=f"lead_name_{key}")
