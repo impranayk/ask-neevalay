@@ -78,8 +78,8 @@ PROGRAMMES = [
 
 # --- School identity ---
 SCHOOL_NAME = "Neevalay Tots"
-BRAND_NAME = "Ask Neevalay"
-MASCOT_NAME = "Neevu"
+BRAND_NAME = "Ask Amma"
+MASCOT_NAME = "Amma"
 BRAND_EYEBROW = "Nurturing Roots, Shaping the Future"
 BRAND_TAGLINE = ("Ask me about Neevalay Tots — our programmes, approach, "
                  "admissions and daily care.")

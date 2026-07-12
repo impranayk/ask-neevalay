@@ -325,7 +325,7 @@ def render_header():
             f"""
             <div class="nv-masthead">
               {brand}
-              <p class="nv-eyebrow">Parent Assistant · here to help you and your little one</p>
+              <p class="nv-eyebrow">Amma by Neevalay · your friendly AI guide to Neevalay Tots</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -461,7 +461,7 @@ def render_lead_form(key: str, *, compact: bool = False):
 
 def render_empty_state():
     if _reply_lang() == "हिंदी":
-        intro = ('नमस्ते! मैं <b>नीवू</b> हूँ — नीवालय टॉट्स के लिए आपकी मददगार गाइड। '
+        intro = ('नमस्ते! मैं <b>अम्मा</b> हूँ — नीवालय टॉट्स के लिए आपकी मददगार गाइड। '
                  'हमारे कार्यक्रमों, तरीके, दाखिले या देखभाल के बारे में पूछें — या इनमें से चुनें:')
     else:
         intro = (f'Hi, I\'m <b>{config.MASCOT_NAME}</b> — your friendly guide to '
@@ -513,7 +513,7 @@ def main():
         if last.get("followups"):
             render_followups(last["followups"], len(msgs) - 1)
 
-    placeholder = ("नीवू से नीवालय टॉट्स के बारे में पूछें…" if _reply_lang() == "हिंदी"
+    placeholder = ("अम्मा से नीवालय टॉट्स के बारे में पूछें…" if _reply_lang() == "हिंदी"
                    else f"Ask {config.MASCOT_NAME} about Neevalay Tots…")
     typed = st.chat_input(placeholder)
     prompt = typed or st.session_state.pop("pending", None)
