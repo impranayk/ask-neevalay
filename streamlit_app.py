@@ -232,17 +232,13 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
   padding: 13px 16px; margin: 6px 0; }
 .nv-error-text { color: var(--text); font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
 .nv-error-cta { display: flex; flex-wrap: wrap; gap: 8px; }
-/* ---- Language toggle — a small EN/हिं pill in the top-right header corner ---- */
+/* ---- Language toggle — a clean horizontal EN/हिं segmented control ---- */
 .st-key-langtoggle { display: flex; justify-content: flex-end; margin: 0; }
-.st-key-langtoggle [role="radiogroup"] { display: inline-flex !important; gap: 0 !important; background: #fff;
-  border: 1px solid var(--border); border-radius: 999px; padding: 2px; }
-.st-key-langtoggle [role="radiogroup"] > label { margin: 0 !important; padding: 3px 11px !important;
-  border-radius: 999px !important; cursor: pointer; display: flex !important; justify-content: center;
-  transition: background .12s; }
-.st-key-langtoggle [role="radiogroup"] > label > div:first-child { display: none !important; }
-.st-key-langtoggle [role="radiogroup"] > label:has(input:checked) { background: var(--aqua) !important; }
-.st-key-langtoggle [role="radiogroup"] > label:has(input:checked) p { color: #0E3B37 !important; font-weight: 800 !important; }
-.st-key-langtoggle [role="radiogroup"] p { font-size: 12px !important; margin: 0 !important; font-weight: 700; }
+.st-key-langtoggle [data-testid="stSegmentedControl"] { width: auto !important; }
+.st-key-langtoggle [data-testid="stSegmentedControl"] [role="radiogroup"],
+.st-key-langtoggle [data-testid="stSegmentedControl"] > div { flex-wrap: nowrap !important; }
+.st-key-langtoggle [data-testid="stSegmentedControl"] button { min-width: 42px !important;
+  padding: 3px 12px !important; font-weight: 700 !important; }
 /* ---- Lead-capture card ("Prefer we call you?") — warm, on-brand ---- */
 [class*="st-key-nvlead_"] details { border: 1.5px solid #cfeeee !important; border-radius: 14px !important;
   background: var(--aqua-soft) !important; box-shadow: 0 2px 10px rgba(59,74,68,.05) !important; }
@@ -306,7 +302,7 @@ def render_contactbar():
 
 def render_header():
     if "mini" in st.query_params:
-        _, c_lang, c_new = st.columns([1.1, 0.9, 1.1], vertical_alignment="center")
+        _, c_lang, c_new = st.columns([0.8, 1.2, 1.1], vertical_alignment="center")
         with c_lang:
             render_lang_toggle()
         with c_new:
@@ -314,7 +310,7 @@ def render_header():
                       use_container_width=True)
         return
     header_logo = _data_uri(config.HEADER_LOGO_PATH)
-    left, c_lang, right = st.columns([4, 0.9, 1.3], vertical_alignment="center")
+    left, c_lang, right = st.columns([3.6, 1.2, 1.3], vertical_alignment="center")
     with left:
         if header_logo:
             brand = (f'<img class="nv-logo" src="{header_logo}" '
@@ -325,7 +321,7 @@ def render_header():
             f"""
             <div class="nv-masthead">
               {brand}
-              <p class="nv-eyebrow">Amma by Neevalay · your friendly AI guide to Neevalay Tots</p>
+              <p class="nv-eyebrow">Amma · your friendly AI-driven guide to Neevalay Tots</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -372,11 +368,12 @@ def pick_suggestion(question: str):
 
 
 def render_lang_toggle():
-    """A tiny EN / हिं toggle floating just above the chat box."""
+    """A clean horizontal EN / हिं segmented toggle (balanced pill, no radio dots)."""
+    st.session_state.setdefault("reply_lang", "English")
     with st.container(key="langtoggle"):
-        st.radio("Language", ["English", "हिंदी"], horizontal=True,
-                 key="reply_lang", label_visibility="collapsed",
-                 format_func=lambda x: "EN" if x == "English" else "हिं")
+        st.segmented_control("Language", ["English", "हिंदी"],
+                             format_func=lambda x: "EN" if x == "English" else "हिं",
+                             key="reply_lang", label_visibility="collapsed")
 
 
 def render_followups(items, midx):
