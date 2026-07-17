@@ -275,6 +275,26 @@ div[data-testid="stButton"] > button:hover {
 
 /* ---- Sidebar ---- */
 [data-testid="stSidebar"] { background: #fff; border-right: 1px solid var(--border); }
+
+/* ---- Admissions Assistant ---- */
+.nv-sub { color: var(--text); opacity: .8; font-size: 14.5px; margin: 2px 0 14px; }
+.nv-adm-step { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 12px;
+  letter-spacing: .5px; text-transform: uppercase; color: var(--aqua-dark);
+  margin: 6px 0 2px; }
+.nv-adm-card { background: var(--aqua-soft); border: 1.5px solid #cfeeee;
+  border-radius: 16px; padding: 18px 20px; margin: 6px 0 14px; }
+.nv-adm-badge { display: inline-block; background: var(--gold); color: #5a4300;
+  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 11px;
+  letter-spacing: .5px; text-transform: uppercase; padding: 3px 10px;
+  border-radius: 20px; margin-bottom: 8px; }
+.nv-adm-head { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 19px;
+  color: var(--text); margin-bottom: 6px; }
+.nv-adm-why { font-size: 15px; line-height: 1.6; color: var(--text); }
+.nv-adm-addons { font-size: 13.5px; color: var(--text); margin-top: 10px; }
+.nv-adm-chip { display: inline-block; background: #fff; border: 1px solid #cfeeee;
+  border-radius: 20px; padding: 2px 10px; margin: 0 4px 4px 0;
+  font-weight: 700; color: var(--aqua-dark); }
+.nv-cta-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 10px; }
 </style>
 """,
     unsafe_allow_html=True,
@@ -335,7 +355,7 @@ def render_header():
     render_contactbar()
 
 
-def render_sidebar():
+def render_sidebar(apply_mode: bool = False):
     with st.sidebar:
         st.markdown(f"### {config.BRAND_NAME}")
         st.caption(f"Your friendly guide to {config.SCHOOL_NAME}. "
@@ -345,6 +365,10 @@ def render_sidebar():
         st.caption(f"WhatsApp / Call: {config.PHONE}")
         st.caption(f"Email: {config.EMAIL}")
         st.caption("Open Mon–Sat, 8:00 AM – 7:00 PM")
+        # In admissions mode the whole page is already a lead form, so the sidebar
+        # callback form and the chat controls would be redundant - hide them.
+        if apply_mode:
+            return
         if store.enabled():
             st.divider()
             render_lead_form("sidebar")
@@ -472,11 +496,157 @@ def render_empty_state():
 
 
 # ----------------------------------------------------------------------------- app
+def _admissions_result(res):
+    """Render the recommendation + rationale + next steps, and confirm the lead."""
+    prog = res["rec"].get("programme")
+    child = res["child"] or "your child"
+    if prog:
+        head = f"{prog} looks like a lovely fit for {html.escape(child)}"
+    elif res["rec"].get("too_young"):
+        head = f"Let's find the right first step for {html.escape(child)}"
+    else:
+        head = f"Let's talk about the best fit for {html.escape(child)}"
+    st.markdown(
+        f'<div class="nv-adm-card"><div class="nv-adm-badge">Our suggestion</div>'
+        f'<div class="nv-adm-head">{head}</div>'
+        f'<div class="nv-adm-why">{html.escape(res["rationale"])}</div>',
+        unsafe_allow_html=True)
+    if res["rec"].get("addons"):
+        chips = " ".join(f'<span class="nv-adm-chip">+ {html.escape(n)}</span>'
+                         for n, _ in res["rec"]["addons"])
+        st.markdown(f'<div class="nv-adm-addons">You might also like: {chips}</div>',
+                    unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if res.get("lead_saved"):
+        st.markdown('<div class="nv-lead-done">✓ Thank you! Our admissions team will '
+                    'call you shortly to arrange a visit and share fees and details.</div>',
+                    unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="nv-cta-row">'
+        f'<a class="nv-cta nv-cta-primary" href="{config.VISIT_URL}" target="_blank" '
+        f'rel="noopener">Book a visit</a>'
+        f'<a class="nv-cta nv-cta-ghost" href="{config.WHATSAPP_URL}" target="_blank" '
+        f'rel="noopener">WhatsApp us</a>'
+        f'<a class="nv-cta nv-cta-ghost" href="{config.ADMISSION_URL}" target="_blank" '
+        f'rel="noopener">Start application</a></div>',
+        unsafe_allow_html=True)
+    if st.button("Start over", key="adm_reset"):
+        st.session_state.pop("adm_result", None)
+        st.rerun()
+
+
+_ADM_AGES = {"Under 2 years": 1.5, "2 years": 2.5, "3 years": 3.5,
+             "4 years": 4.5, "5 years": 5.5, "6 years or older": 6.5}
+
+
+def render_admissions():
+    """Guided programme finder that ends in a captured admissions lead. Shown when
+    the app is opened with ?apply (or ?mode=apply); mask as neevalay.com/apply."""
+    st.markdown(
+        f'<div class="nv-title" style="font-size:22px;">Find the right start for '
+        f'<span class="accent">your child</span></div>'
+        f'<div class="nv-sub">Answer a few quick questions and we\'ll suggest the '
+        f'best-fit programme at {config.SCHOOL_NAME}, then arrange a visit.</div>',
+        unsafe_allow_html=True)
+
+    if st.session_state.get("adm_result"):
+        _admissions_result(st.session_state["adm_result"])
+        return
+
+    from chatbot import admissions
+    with st.form("adm_form"):
+        st.markdown('<div class="nv-adm-step">About your child</div>',
+                    unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
+        child = c1.text_input("Child's first name (optional)",
+                              placeholder="e.g. Aarav")
+        age_label = c2.selectbox("Child's age", list(_ADM_AGES.keys()), index=2)
+        priorities = st.multiselect("What matters most to you? (pick any)",
+                                    admissions.PRIORITIES)
+        when = st.selectbox("When are you hoping to start?", admissions.START_WHEN)
+
+        st.markdown('<div class="nv-adm-step">How can we reach you?</div>',
+                    unsafe_allow_html=True)
+        p1, p2 = st.columns(2)
+        pname = p1.text_input("Your name")
+        phone = p2.text_input("Phone / WhatsApp")
+        email = st.text_input("Email (optional)", placeholder="you@email.com")
+        area = st.text_input("Preferred area / branch (optional)",
+                             placeholder="e.g. Dwarka, Noida")
+        go = st.form_submit_button("Find my programme", use_container_width=True)
+
+    if not go:
+        return
+    digits = re.sub(r"\D", "", phone or "")
+    if not pname.strip() or len(digits) < 10:
+        st.warning("Please add your name and a valid phone number so our team can "
+                   "reach you.")
+        return
+
+    age = _ADM_AGES[age_label]
+    rec = admissions.recommend(age, priorities)
+    # Ground the rationale in the real website content for the chosen programme.
+    q = f"{rec['programme'] or 'programmes'} for a {age_label} child, {', '.join(priorities)}"
+    try:
+        context = rag.format_context(rag.retrieve(q)) if rag.has_knowledge() else ""
+    except Exception:
+        context = ""
+    # Only the child's FIRST name is ever sent to the AI (Groq). If a parent typed a
+    # full name in the field, keep it for the school's own lead record but send just
+    # the first token onward - same rule as the Studio roster.
+    child_first = (child.strip().split()[0] if child.strip() else "")
+    with st.spinner("Finding the best fit…"):
+        try:
+            prompt = admissions.rationale_prompt(child_first, age_label, rec, priorities, context)
+            resp = llm._complete(
+                models=config.GROQ_MODELS,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.6, max_tokens=220, stream=False)
+            rationale = (resp.choices[0].message.content or "").strip()
+        except Exception:
+            rationale = (f"We'd love to welcome {child_first or 'your child'} to "
+                         f"{config.SCHOOL_NAME}. Our team will help you find the "
+                         f"perfect fit.")
+    # Capture the lead - tagged 'admissions' so it's distinct from chat leads. Only
+    # the child's FIRST name and age band are stored/sent (no surname).
+    msg = " | ".join(filter(None, [
+        f"Child: {child.strip()}" if child.strip() else "",
+        f"Age: {age_label}",
+        f"Priorities: {', '.join(priorities)}" if priorities else "",
+        f"Start: {when}",
+        f"Area: {area.strip()}" if area.strip() else "",
+        f"Suggested: {rec['programme'] or 'to be discussed'}",
+    ]))
+    saved = False
+    try:
+        saved = store.create_lead(
+            name=pname, phone=phone, email=email,
+            programme=rec["programme"] or "Not sure yet",
+            child_age=age_label, message=msg, source="admissions",
+            session_id=st.session_state.get("sid"))
+    except Exception:
+        saved = False
+    st.session_state["adm_result"] = {
+        "rec": rec, "rationale": rationale, "child": child.strip(),
+        "lead_saved": saved,
+    }
+    st.rerun()
+
+
 def main():
     # The 'Built with Streamlit' badge + viewer chrome are hidden by the CSS block
     # above (a[href*="streamlit.io/.app"], viewerBadge, etc.) — no JS needed.
-    render_sidebar()
+    apply_mode = "apply" in st.query_params or st.query_params.get("mode") == "apply"
+    render_sidebar(apply_mode=apply_mode)
     render_header()
+
+    # Admissions Assistant mode: a guided programme finder + lead capture, opened
+    # with ?apply (mask as neevalay.com/apply). Otherwise the normal chat.
+    if apply_mode:
+        st.session_state.setdefault("sid", uuid.uuid4().hex[:12])
+        render_admissions()
+        return
 
     if not config.GROQ_API_KEY:
         st.warning(
