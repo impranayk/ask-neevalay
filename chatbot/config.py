@@ -92,7 +92,10 @@ CALL_URL = "tel:+919711752584"
 EMAIL = "hello@neevalay.com"
 # The site moved to WordPress pretty URLs; the old .html paths now 404.
 CONTACT_URL = "https://neevalay.com/contact/"                # general enquiry form
-ADMISSION_URL = "https://neevalay.com/admission-form/"       # admissions application
+# The public "apply" front door is the Stage 2 Registration form (Fluent Forms).
+# The full Stage 3 enrolment form lives at /admission/ and is shared privately
+# with families the school has accepted.
+ADMISSION_URL = "https://neevalay.com/register/"             # Stage 2 registration
 VISIT_URL = "https://neevalay.com/programme-enquiries/"      # book-a-visit request form
 
 # --- Brand palette (from the school's designer) ---
