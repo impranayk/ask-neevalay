@@ -1,5 +1,5 @@
 /**
- * Ask Neevu → Google Sheet lead capture.
+ * Ask Amma -> Google Sheet lead capture.
  *
  * Paste this into your Google Sheet's Apps Script editor (Extensions → Apps
  * Script), then deploy it as a Web App (steps in EMBED_AND_DB.md). Each lead the
@@ -35,7 +35,7 @@ function doPost(e) {
     if (NOTIFY_EMAIL) {
       MailApp.sendEmail(
         NOTIFY_EMAIL,
-        "New Ask Neevu lead: " + (data.name || "(no name)"),
+        "New Ask Amma lead: " + (data.name || "(no name)"),
         "Name: " + (data.name || "") +
         "\nPhone: " + (data.phone || "") +
         "\nProgramme: " + (data.programme || "") +
