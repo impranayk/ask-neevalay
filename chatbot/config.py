@@ -90,9 +90,10 @@ PHONE = "+91 97117 52584"
 WHATSAPP_URL = "https://wa.me/919711752584"
 CALL_URL = "tel:+919711752584"
 EMAIL = "hello@neevalay.com"
-CONTACT_URL = "https://neevalay.com/contact.html"                # general enquiry form
-ADMISSION_URL = "https://neevalay.com/admission-form.html"       # admissions application
-VISIT_URL = "https://neevalay.com/programme-enquiries.html"      # book-a-visit request form
+# The site moved to WordPress pretty URLs; the old .html paths now 404.
+CONTACT_URL = "https://neevalay.com/contact/"                # general enquiry form
+ADMISSION_URL = "https://neevalay.com/admission-form/"       # admissions application
+VISIT_URL = "https://neevalay.com/programme-enquiries/"      # book-a-visit request form
 
 # --- Brand palette (from the school's designer) ---
 COLOR_AQUA = "#5CCCCC"    # Primary — Soft Aqua
